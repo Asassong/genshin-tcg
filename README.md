@@ -3,7 +3,7 @@
 
 尚未完成/half-finished
 
-###本项目发展方向/developing
+### 本项目发展方向/developing
 
 mod：牌局编辑器，卡牌编辑器
 
