@@ -1,0 +1,600 @@
+{
+    "Ganyu": {
+        "element_type": "CRYO",
+        "skills": {
+            "Liutian Archery": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "CRYO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Trail of the Qilin": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[1, "CRYO"]],
+                "create": [[1, "Ice Lotus"]]},
+            "Frostflake Arrow": {
+                "type": ["Normal Attack", ""],
+                "cost": [[5, "CRYO"]],
+                "damage": [[2, "CRYO"], [2, "PIERCE"]],
+                "modify": [{"condition":[], "effect":{"Frostflake Arrow": "+1"}, "effect_obj":"COUNTER", "time_limit":["IMMEDIATE", 1]}]},
+            "Celestial Shower": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "CRYO"], [3, "ENERGY"]],
+                "damage": [[1, "CRYO"], [1, "PIERCE"]],
+                "summon": [[1, "Sacred Cryo Pearl"]]}},
+        "counter": ["Frostflake Arrow"],
+        "weapon": "Bow",
+        "nation": ["Liyue", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Diona": {
+        "element_type": "CRYO",
+        "skills": {
+            "Kätzlein Style": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "CRYO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Icy Paws": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[2, "CRYO"]],
+                "create": [[1, "Cat-Claw Shield"]]},
+            "Signature Mix": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "CRYO"], [3, "ENERGY"]],
+                "damage": [[1, "CRYO"]],
+                "summon": [[1, "Drunken Mist"]],
+                "modify": [{"condition":[], "effect":{"HEAL": 2}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Bow",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Kaeya": {
+        "element_type": "CRYO",
+        "skills": {
+            "Ceremonial Bladework": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "CRYO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Frostgnaw": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[3, "CRYO"]]},
+            "Glacial Waltz": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "CRYO"], [2, "ENERGY"]],
+                "damage": [[1, "CRYO"]],
+                "create": [[1, "Icicle"]]}},
+        "weapon": "Sword",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Chongyun": {
+        "element_type": "CRYO",
+        "skills": {
+            "Demonbane": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "CRYO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Chonghua's Layered Frost": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[3, "CRYO"]],
+                "create": [[1, "Chonghua Frost Field"]]},
+            "Cloud-Parting Star": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "CRYO"], [3, "ENERGY"]],
+                "damage": [[7, "CRYO"]]}},
+        "weapon": "Claymore",
+        "nation": ["Liyue", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Kamisato Ayaka": {
+        "element_type": "CRYO",
+        "skills": {
+            "Kamisato Art: Kabuki": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "CRYO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Kamisato Art: Hyouka": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[3, "CRYO"]]},
+            "Kamisato Art: Soumetsu": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "CRYO"], [3, "ENERGY"]],
+                "damage": [[4, "CRYO"]],
+                "summon": [[1, "Frostflake Seki no To"]]},
+            "Kamisato Art: Senho": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "modify": [{"condition":["BE_CHANGED_AS_ACTIVE"], "effect":{"ADD_MODIFY": {"condition":[], "effect":{"INFUSION": "CRYO"}, "effect_obj":"SELF", "time_limit":["DURATION", 1]}}, "effect_obj":"SELF", "time_limit":[]}]}},
+        "weapon": "Sword",
+        "nation": ["Inazuma", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Barbara": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Whisper of Water": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "HYDRO"], [2, "ANY"]],
+                "damage": [[1, "HYDRO"]]},
+            "Let the Show Begin♪": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "HYDRO"]],
+                "damage": [[1, "HYDRO"]],
+                "summon": [[1, "Melody Loop"]]},
+            "Shining Miracle♪": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "HYDRO"], [3, "ENERGY"]],
+                "modify": [{"condition":[], "effect":{"HEAL": 4}, "effect_obj":"ALL", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Catalyst",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Xingqiu": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Guhua Style": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "HYDRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Fatal Rainscreen": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "HYDRO"]],
+                "damage": [[2, "HYDRO"]],
+                "create": [[1, "Rain Sword"]],
+                "modify": [{"condition":[], "effect":{"APPLICATION": "HYDRO"}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]},
+            "Raincutter": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "HYDRO"], [2, "ENERGY"]],
+                "damage": [[1, "HYDRO"]],
+                "create": [[1, "Rainbow Bladework"]],
+                "modify": [{"condition":[], "effect":{"APPLICATION": "HYDRO"}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Sword",
+        "nation": ["Liyue", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Mona": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Ripple of Fate": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "HYDRO"], [2, "ANY"]],
+                "damage": [[1, "HYDRO"]]},
+            "Mirror Reflection of Doom": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "HYDRO"]],
+                "damage": [[1, "HYDRO"]],
+                "summon": [[1, "Reflection"]]},
+            "Stellaris Phantasm": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "HYDRO"], [3, "ENERGY"]],
+                "damage": [[4, "HYDRO"]],
+                "create": [[1, "Illusory Bubble"]]},
+            "Illusory Torrent": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "modify": [{"condition":["CHANGE_TO_STANDBY"], "effect":{"CHANGE_ACTION": "fast"}, "effect_obj":"SELF", "time_limit":["ROUND", [1, 1]]}]}},
+        "weapon": "Catalyst",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Diluc": {
+        "element_type": "PYRO",
+        "skills": {
+            "Tempered Sword": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "PYRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Searing Onslaught": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "PYRO"]],
+                "damage": [[3, "PYRO"]],
+                "modify": [{"condition":[["CHECK", "COUNTER_Searing Onslaught_==3"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":["ROUND", [1, 1]]},
+                           {"condition":[], "effect":{"Searing Onslaught": "+1"}, "effect_obj":"COUNTER", "time_limit":[]},
+                           {"condition":["STAGE_ROUND_END"], "effect":{"Searing Onslaught": 0}, "effect_obj":"COUNTER", "time_limit":[]}]},
+            "Dawn": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "PYRO"], [3, "ENERGY"]],
+                "damage": [["8", "PYRO"]],
+                "modify": [{"condition":[], "effect":{"INFUSION": "PYRO"}, "effect_obj":"SELF", "time_limit":["DURATION", 2]}]}},
+        "counter": ["Searing Onslaught"],
+        "weapon": "Claymore",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Xiangling": {
+        "element_type": "PYRO",
+        "skills": {
+            "Dough-Fu": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "PYRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Guoba Attack": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "PYRO"]],
+                "summon": [[1, "Guoba"]]},
+            "Pyronado": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "PYRO"], [2, "ENERGY"]],
+                "damage": [[2, "PYRO"]],
+                "create": [[1, "Pyronado"]]}},
+        "weapon": "Polearm",
+        "nation": ["Liyue", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Bennett": {
+        "element_type": "PYRO",
+        "skills": {
+            "Strike of Fortune": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "PYRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Passion Overload": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "PYRO"]],
+                "damage": [[3, "PYRO"]]},
+            "Fantastic Voyage": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "PYRO"], [2, "ENERGY"]],
+                "damage": [[2, "PYRO"]],
+                "create": [[1, "Inspiration Field"]]}},
+        "weapon": "Sword",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Yoimiya": {
+        "element_type": "PYRO",
+        "skills": {
+            "Firework Flare-Up": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "PYRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Niwabi Fire-Dance": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[1, "PYRO"]],
+                "create": [1, "Niwabi Enshou"],
+                "modify": [{"condition":[], "effect":{"SET_ENERGY": "+0"}, "effect_obj":"SELF", "time_limit":[]}]},
+            "Ryuukin Saxifrage": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "PYRO"], [2, "ENERGY"]],
+                "damage": [[3, "PYRO"]],
+                "create": [[1, "Aurous Blaze"]]}},
+        "weapon": "Bow",
+        "nation": ["Inazuma", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Fischl": {
+        "element_type": "ELECTRO",
+        "skills": {
+            "Bolts of Downfall": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ELECTRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Nightrider": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ELECTRO"]],
+                "damage": [[1, "ELECTRO"]],
+                "summon": [[1, "Oz"]]},
+            "Midnight Phantasmagoria": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "ELECTRO"], [3, "ENERGY"]],
+                "damage": [[4, "ELECTRO"], [2, "PIERCE"]]}},
+        "weapon": "Bow",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Razor": {
+        "element_type": "ELECTRO",
+        "skills": {
+            "Steel Fang": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ELECTRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Claw and Thunder": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ELECTRO"]],
+                "damage": [[3, "ELECTRO"]]},
+            "Lightning Fang": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "ELECTRO"], [3, "ENERGY"]],
+                "damage": [[5, "ELECTRO"]],
+                "create": [1, "The Wolf Within"]}},
+        "weapon": "Claymore",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Keqing": {
+        "element_type": "ELECTRO",
+        "skills": {
+            "Yunlai Swordsmanship": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ELECTRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Stellar Restoration": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ELECTRO"]],
+                "damage": [[3, "ELECTRO"]],
+                "modify": [{"condition":[["HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"REMOVE_CARD": "Lightning Stiletto", "ADD_MODIFY": {"condition":[], "effect":{"INFUSION": "ELECTRO"}, "effect_obj":"SELF", "time_limit":["DURATION", 2]}}, "effect_obj":["CARD", "SELF"], "time_limit":["IMMEDIATE", 1]},
+                           {"condition":[["DONT_HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"ADD_CARD": "Lightning Stiletto"}, "effect_obj":"CARD", "time_limit":["IMMEDIATE", 1]}]},
+            "Starward Sword": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "ELECTRO"], [3, "ENERGY"]],
+                "damage": [[4, "ELECTRO"], [3, "PIERCE"]]}},
+        "weapon": "Sword",
+        "nation": ["Liyue", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Cyno": {
+        "element_type": "ELECTRO",
+        "skills": {
+            "Invoker's Spear": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ELECTRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Secret Rite: Chasmic Soulfarer": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ELECTRO"]],
+                "damage": [[3, "ELECTRO"]]},
+            "Sacred Rite: Wolf's Swiftness": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "ELECTRO"], [2, "ENERGY"]],
+                "damage": [[4, "ELECTRO"]],
+                "modify": {"condition":[], "effect":{"Indwelling": "+2"}, "effect_obj":"COUNTER", "time_limit":["IMMEDIATE", 1]}},
+            "Lawful Enforcer": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "create": [1, "Pactsworn Pathclearer"]}},
+        "counter": ["Indwelling"],
+        "weapon": "Polearm",
+        "nation": ["Sumeru", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Sucrose": {
+        "element_type": "ANEMO",
+        "skills": {
+            "Wind Spirit Creation": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ANEMO"], [2, "ANY"]],
+                "damage": [[1, "ANEMO"]]},
+            "Astable Anemohypostasis Creation - 6308": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ANEMO"]],
+                "damage": [[3, "ANEMO"]],
+                "modify": [{"condition":[], "effect":{"CHANGE_CHARACTER": "-1"}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":["IMMEDIATE", 1]}]},
+            "Forbidden Creation - Isomer 75 / Type II": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "ANEMO"], [2, "ENERGY"]],
+                "damage": [[1, "ANEMO"]],
+                "summon": [[1, "Large Wind Spirit"]]}},
+        "weapon": "Catalyst",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Jean": {
+        "element_type": "ANEMO",
+        "skills": {
+            "Favonius Bladework": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ANEMO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Gale Blade": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ANEMO"]],
+                "damage": [[3, "ANEMO"]],
+                "modify": [{"condition":[], "effect":{"CHANGE_CHARACTER": "+1"}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":["IMMEDIATE", 1]}]},
+            "Dandelion Breeze": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "ANEMO"], [3, "ENERGY"]],
+                "summon": [[1, "Dandelion Field"]],
+                "modify": [{"condition":[], "effect":{"HEAL": 2}, "effect_obj":"ALL", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Sword",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Ningguang": {
+        "element_type": "GEO",
+        "skills": {
+            "Sparkling Scatter": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "GEO"], [2, "ANY"]],
+                "damage": [[1, "GEO"]]},
+            "Jade Screen": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "GEO"]],
+                "damage": [[2, "GEO"]],
+                "create": [[1, "mod Jade Screen"]]},
+            "Starshatter": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "GEO"], [3, "ENERGY"]],
+                "damage": [["6", "GEO"]],
+                "modify": [{"condition":[["HAVE_STATE","state Jade Screen"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Catalyst",
+        "nation": ["Liyue", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Noelle": {
+        "element_type": "GEO",
+        "skills": {
+            "Favonius Bladework - Maid": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "GEO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Breastplate": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "GEO"]],
+                "damage": [[1, "GEO"]],
+                "create": [[1, "Full Plate"]]},
+            "Sweeping Time": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[4, "GEO"], [2, "ENERGY"]],
+                "damage": [[4, "GEO"]],
+                "create": [[1, "state Sweeping Time"]]}},
+        "weapon": "Claymore",
+        "nation": ["Mondstadt", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Collei": {
+        "element_type": "DENDRO",
+        "skills": {
+            "Supplicant's Bowmanship": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "DENDRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Floral Brush": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "DENDRO"]],
+                "damage": [[3, "DENDRO"]]},
+            "Trump-Card Kitty": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "DENDRO"], [2, "ENERGY"]],
+                "damage": [[2, "DENDRO"]],
+                "summon": [[1, "Cuilein-Anbar"]]}},
+        "weapon": "Bow",
+        "nation": ["Sumeru", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Rhodeia of Loch": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Surge": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "HYDRO"], [2, "ANY"]],
+                "damage": [[1, "HYDRO"]]},
+            "Oceanid Mimic Summoning": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "HYDRO"]],
+                "summon": [[1, "Oceanid Mimic"]]},
+            "The Myriad Wilds": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[5, "HYDRO"]],
+                "summon": [[2, "Oceanid Mimic"]]},
+            "Tide and Torrent": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "HYDRO"], [3, "ENERGY"]],
+                "damage": [[2, "HYDRO"]],
+                "modify": [{"condition":[["SUM_SUMMON", "all"]], "effect":{"DMG": "+2*number"}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Other Weapons",
+        "nation": ["Monster", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Mirror Maiden": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Water Ball": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "HYDRO"], [2, "ANY"]],
+                "damage": [[1, "HYDRO"]]},
+            "Influx Blast": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "HYDRO"]],
+                "damage": [[3, "HYDRO"]],
+                "modify": [{"condition":["ONLY"], "effect":{"HYDRO_HURT": "+1"}, "effect_obj":"OPPOSE_SELF", "time_limit":["DURATION", 2]}]},
+            "Rippled Reflection": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "HYDRO"], [2, "ENERGY"]],
+                "damage": [[5, "HYDRO"]]}},
+        "weapon": "Other Weapons",
+        "nation": ["Fatui", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Fatui Pyro Agent": {
+        "element_type": "PYRO",
+        "skills": {
+            "Thrust": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "PYRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Prowl": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "PYRO"]],
+                "damage": [[1, "PYRO"]],
+                "create": [[1, "Stealth"]]},
+            "Blade Ablaze": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "PYRO"], [2, "ENERGY"]],
+                "damage": [[5, "PYRO"]]},
+            "Stealth Master": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "create": [[1, "Stealth"]]}},
+        "weapon": "Other Weapons",
+        "nation": ["Fatui", "", ""],
+        "energy": 2,
+        "hp": 10},
+    "Maguu Kenki": {
+        "element_type": "ANEMO",
+        "skills": {
+            "Ichimonji": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "ANEMO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Blustering Blade": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "ANEMO"]],
+                "damage": [[1, "ANEMO"]],
+                "summon": [[1, "Shadowsword: Lone Gale"]]},
+            "Frosty Assault": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "CRYO"]],
+                "damage": [[1, "CRYO"]],
+                "summon": [[1, "Shadowsword: Galloping Frost"]]},
+            "Pseudo Tengu Sweeper": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "ANEMO"], [3, "ENERGY"]],
+                "damage": [[4, "ANEMO"]],
+                "modify": [{"condition":[], "effect":{"TRIGGER": "TYPE_Shadowsword", "CONSUME_SUMMON_USAGE": 0}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}]}},
+        "weapon": "Other Weapons",
+        "nation": ["Monster", "", ""],
+        "energy": 3,
+        "hp": 10},
+    "Stonehide Lawachurl": {
+        "element_type": "GEO",
+        "skills": {
+            "Plama Lawa": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "GEO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Movo Lawa": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "GEO"]],
+                "damage": [[3, "PHYSICAL"]]},
+            "Upa Shato": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "GEO"], [2, "ENERGY"]],
+                "damage": [[5, "PHYSICAL"]]},
+            "Infused Stonehide": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "create": [[1, "Stonehide"], [1, "Stone Force"]]}},
+        "weapon": "Other Weapons",
+        "nation": ["Monster", "Hilichurl", ""],
+        "energy": 2,
+        "hp": 8},
+    "Jadeplume Terrorshroom": {
+        "element_type": "DENDRO",
+        "skills": {
+            "Majestic Dance": {
+                "type": ["Normal Attack", ""],
+                "cost": [[1, "DENDRO"], [2, "ANY"]],
+                "damage": [[2, "PHYSICAL"]]},
+            "Volatile Spore Cloud": {
+                "type": ["Elemental Skill", ""],
+                "cost": [[3, "DENDRO"]],
+                "damage": [[3, "DENDRO"]]},
+            "Feather Spreading": {
+                "type": ["Elemental Burst", ""],
+                "cost": [[3, "DENDRO"], [2, "ENERGY"]],
+                "damage": [[4, "DENDRO"]],
+                "modify": {"condition":[["GET", "COUNTER_Radical Vitality"]], "effect":{"DMG": "+number"}, "effect_obj":"SELF", "time_limit":["IMMEDIATE", 1]}},
+            "Radical Vitality": {
+                "type": ["Passive Skill", ""],
+                "cost": [],
+                "create": [[1, "state Radical Vitality"]]}},
+        "counter": ["Radical Vitality"],
+        "weapon": "Other Weapons",
+        "nation": ["Monster", "", ""],
+        "energy": 2,
+        "hp": 10}
+}
