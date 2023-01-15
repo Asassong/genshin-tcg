@@ -284,5 +284,19 @@ class EffectType(Enum):
     CHANGE_SUMMON_ELEMENT = 101 # 砂糖
     RANDOM = 102 # 纯水精灵
 
+class OperationType(Enum):
+    none = 0
+    round_start = 1
+    roll_phase = 2
+    round_end = 3
+    element_attack = 4
+    element_hurt = 5
+    pierce = 6
+    pierce_hurt = 7
+    change_character = 8
+    infusion = 9
+    cost = 10
+    counter = 11
+
 
 
