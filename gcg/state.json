@@ -1,0 +1,88 @@
+{
+  "Ice Lotus": {
+    "modify": [{"condition":["BEING_HIT"], "effect":{"HURT": "-1"}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 2}}]
+  },
+  "Cat-Claw Shield": {
+    "modify": [{"condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}}]
+  },
+  "Icicle": {
+    "modify": [{"condition":["CHANGE_AVATAR"], "effect":{"ADD_MODIFY": {"condition":[], "effect":{"CRYO_DMG": 2}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"TEAM", "time_limit":{"USAGE": 3}}]
+  },
+  "Chonghua Frost Field": {
+    "modify": [{"condition":[["CHECK", "WEAPON_ALL_MELEE"]], "effect":{"INFUSION": "CRYO"}, "effect_obj":"ACTIVE", "time_limit":{"DURATION": 2}}]
+  },
+  "Rain Sword": {
+    "modify": [{"condition":["BEING_HIT", ["CHECK", "DAMAGE_ALL_>=3"]], "effect":{"HURT": "-1"}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 2}}]
+  },
+  "Rainbow Bladework": {
+    "modify": [{"condition":["NORMAL_ATTACK"], "effect":{"HYDRO_DMG": 2}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 3}}]
+  },
+  "Illusory Bubble": {
+    "modify": [{"condition":["SKILL"], "effect":{"DMG": "*2"}, "effect_obj":"ALL", "time_limit":{"USAGE": 1}}]
+  },
+  "Pyronado": {
+    "modify": [{"condition":["SKILL"], "effect":{"PYRO_DMG": 2}, "effect_obj":"ALL", "time_limit":{"USAGE": 2}}]
+  },
+  "Inspiration Field": {
+    "modify": [{"condition":[["CHECK", "HP_ACTIVE_>=7"]], "effect":{"DMG": "+2"}, "effect_obj":"ACTIVE", "time_limit":{"DURATION": 2}},
+               {"condition":[["CHECK", "HP_ACTIVE_<=6"]], "effect":{"HEAL": 2}, "effect_obj":"ACTIVE", "time_limit":{"DURATION": 2}}]
+  },
+  "Niwabi Enshou": {
+    "modify": [{"condition":["NORMAL_ATTACK"], "effect":{"DMG": "+1", "INFUSION": "PYRO"}, "effect_obj":"SELF", "time_limit":{"USAGE": 2}}]
+  },
+  "Aurous Blaze": {
+    "modify": [{"condition":["SKILL"], "effect":{"PYRO_DMG": 1}, "effect_obj":"NO_SELF", "time_limit":{"DURATION": 2}}]
+  },
+  "The Wolf Within": {
+    "modify": [{"condition":["NORMAL_ATTACK"], "effect":{"ELECTRO_DMG": 2}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}},
+               {"condition":["ELEMENTAL_SKILL"], "effect":{"ELECTRO_DMG": 2}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}}]
+  },
+  "Pactsworn Pathclearer": {
+    "modify": [{"condition":["STAGE_ROUND_END"], "effect":{"Indwelling": "+1"}, "effect_obj":"COUNTER", "time_limit": {"INFINITE": 1}},
+               {"condition":[["CHECK", "COUNTER_Indwelling_>=2"]], "effect":{"INFUSION": "ELECTRO"}, "effect_obj":"SELF", "time_limit": {"INFINITE": 1}},
+               {"condition":[["CHECK", "COUNTER_Indwelling_>=4"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit": {"INFINITE": 1}},
+               {"condition":[["CHECK", "COUNTER_Indwelling_>=6"]], "effect":{"Indwelling": "-4"}, "effect_obj":"COUNTER", "time_limit": {"INFINITE": 1}}]
+  },
+  "state Jade Screen": {
+    "modify": [{"condition":["BEING_HIT", ["CHECK", "DAMAGE_ALL_>=2"]], "effect":{"HURT": "-1"}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 2}}]
+  },
+  "Full Plate": {
+    "modify": [{"condition":[], "effect":{"SHIELD": 2}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}},
+               {"condition":[], "effect":{"PHYSICAL_HURT": "/2"}, "effect_obj":"ACTIVE", "time_limit":{"ATTACH": 1}}]
+  },
+  "state Sweeping Time": {
+    "modify": [{"condition":["NORMAL_ATTACK"], "effect":{"COST_GEO": "-1"}, "effect_obj":"SELF", "time_limit": {"ROUND": [1, 1], "DURATION": 2}},
+               {"condition":["NORMAL_ATTACK"], "effect":{"DMG": "+2", "INFUSION": "GEO"}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}}]
+  },
+  "Stealth": {
+    "modify": [{"condition":[], "effect":{"HURT": "-1", "DMG": "+1"}, "effect_obj":"SELF", "time_limit":{"USAGE": 2}}]
+  },
+  "Stonehide": {
+    "modify": [{"condition":["BEING_HIT", ["CHECK", "DAMAGE_ALL_>0"]], "effect":{"HURT": "-1", "ADD_MODIFY": {"condition":[["CHECK", "ELEMENT_HIT_GEO"]], "effect":{"CONSUME_STATE_USAGE": 1}, "effect_obj":"SUPER", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"SELF", "time_limit":{"USAGE": 3}}]
+  },
+  "Stone Force": {
+    "modify": [{"condition":[], "effect":{"DMG": "+1"}, "effect_obj":"SELF", "time_limit":{"ROUND": [1, 1], "ATTACH": "Stonehide"}},
+               {"condition":[], "effect":{"INFUSION": "GEO"}, "effect_obj":"SELF", "time_limit":{"ATTACH": "Stonehide"}}]
+  },
+  "state Radical Vitality": {
+    "modify": [{"condition":["ELEMENT_DMG", ["CHECK", "COUNTER_Radical Vitality_<3"]], "effect":{"Radical Vitality": "+1"}, "effect_obj":"COUNTER", "time_limit":{"INFINITE": 1}},
+               {"condition":["ELEMENT_HURT", ["CHECK", "COUNTER_Radical Vitality_<3"]], "effect":{"Radical Vitality": "+1"}, "effect_obj":"COUNTER", "time_limit":{"INFINITE": 1}},
+               {"condition":["STAGE_ROUND_END", ["CHECK", "COUNTER_Radical Vitality_==3"]], "effect":{"Radical Vitality": 0, "SET_ENERGY": 0}, "effect_obj":["COUNTER", "SELF"], "time_limit":{"INFINITE": 1}}]
+  },
+  "Dendro Core": {
+    "modify": [{"condition":[["CHECK", "ELEMENT_ATTACK_PYRO", "ELEMENT_ATTACK_ELECTRO"]], "effect":{"DMG": "+2"}, "effect_obj":"ALL", "time_limit":{"USAGE": 1}}]
+  },
+  "Catalyzing Field": {
+    "modify": [{"condition":[["CHECK", "ELEMENT_ATTACK_DENDRO", "ELEMENT_ATTACK_ELECTRO"]], "effect":{"DMG": "+1"}, "effect_obj":"ALL", "time_limit":{"USAGE": 1}, "stack": 2, "repeated": "False"}]
+  },
+  "Explosive Spark": {
+    "modify": [{"condition":[["CHECK", "DICE_PLAYER_%2==0"], "NORMAL_ATTACK"], "effect":{"COST_PYRO": "-1", "DMG": "+1"}, "effect_obj":"SELF", "time_limit":{"USAGE": 1}}]
+  },
+  "Sparks 'n' Splash": {
+    "modify": [{"condition":["USE_SKILL"], "effect":{"PYRO_DMG": 2}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":{"USAGE": 2}}]
+  },
+  "Thunderbeast's Targe": {
+    "modify": [{"condition":["NORMAL_ATTACK"], "effect":{"ELECTRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"DURATION": 2}},
+               {"condition":[["CHECK", "DAMAGE_HURT_>=3"]], "effect":{"HURT": "-1"}, "effect_obj":"ALL", "time_limit":{"DURATION": 2}}]
+  }
+}
