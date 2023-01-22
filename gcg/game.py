@@ -17,7 +17,7 @@
 import random
 from player import Player
 from character import Character
-from enums import ElementType, PlayerAction, GameStage, TimeLimit, EffectObj, EffectType
+from enums import ElementType, PlayerAction, GameStage, TimeLimit, EffectObj
 from utils import read_json, pre_check
 from typing import Union
 
@@ -34,6 +34,7 @@ class Game:
         self.stage = GameStage.NONE
         self.state_dict = read_json("state.json")
         self.now_player = None
+        self.max_round = 15
 
     def start_game(self):
         config = read_json("config.json")
@@ -141,12 +142,19 @@ class Game:
         self.now_player = self.first_player
         for _ in range(len(self.players)):
             player = self.players[self.now_player]
-            for effect, summon_obj, value in player.trigger_summon():
-                if effect == "damage":
-                    self.handle_damage(summon_obj, "team", value)
+            for summon in player.summons.copy():
+                for effect, value in player.trigger_summon(summon, 1):
+                    if effect == "damage":
+                        self.handle_damage(summon, "team", value)
             player.dices.clear()
             player.draw(2)
             self.now_player = (self.now_player + 1) % len(self.players)
+
+    def get_now_player(self):
+        return self.players[self.now_player]
+
+    def get_oppose(self):
+        return self.players[~self.now_player]
 
     @staticmethod
     def judge_input(input_, min_, max_):
@@ -276,6 +284,8 @@ class Game:
         s_name = " ".join(names)
         summon_name = player.get_summon_name()
         s_summon_name = ",".join(summon_name)
+        support = player.get_support_name()
+        s_support_name = ",".join(support)
         detail = self.get_player_character_detail(player)
         # TODO 不一定只有两个玩家
         oppose = self.players[~self.players.index(player)]
@@ -283,18 +293,22 @@ class Game:
         oppose_cards = len(oppose.get_hand())
         oppose_summon = oppose.get_summon_name()
         s_oppose_summon = ",".join(oppose_summon)
+        oppose_support = oppose.get_support_name()
+        s_oppose_support = ",".join(oppose_support)
         oppose_names, oppose_active = self.get_player_character_info(oppose)
         oppose_detail = self.get_player_character_detail(oppose)
         while True:
+            print("您的对手手牌%d张，骰子%d个，角色为 %s, %s出战" % (oppose_cards, oppose_dices, oppose_names, oppose_active))
+            print("您对手的召唤物为 %s" % s_oppose_summon)
+            print("您对手的支援卡为 %s" % s_oppose_support)
+            print(oppose_detail)
             print("%s" % player.name)
             print("您的骰子为 %s" % s_dice_type)
             print("您的手牌为 %s" % s_card_info)
             print("您的角色为 %s, %s 出战" % (s_name, active))
             print("您的召唤物为 %s" % s_summon_name)
+            print("您的支援卡为 %s" % s_support_name)
             print(detail)
-            print("您的对手手牌%d张，骰子%d个，角色为 %s, %s出战" % (oppose_cards, oppose_dices, oppose_names, oppose_active))
-            print("您对手的召唤物为 %s" % s_oppose_summon)
-            print(oppose_detail)
             action = input("请选择要进行的操作\n1.使用角色技能2.元素调和3.结束回合4.切换角色5.打出卡牌")
             valid_action = self.judge_input(action, 1, 5)
             if isinstance(valid_action, list):
@@ -314,6 +328,20 @@ class Game:
             print("您的召唤物为 %s" % s_summon)
             index = input("请选择要移除的召唤物(0-%d, 空格隔开):" % (len(summon) - 1))
             valid_index = self.judge_input(index, 0, len(summon) - 1)
+            if len(valid_index) == 1:
+                break
+            else:
+                print("输入格式错误，请重输")
+        return valid_index[0]
+
+    def ask_player_remove_support(self, player: Player):
+        support = player.get_support_name()
+        s_support = ",".join(support)
+        while True:
+            print("%s" % player.name)
+            print("您的支援卡为 %s" % s_support)
+            index = input("请选择要移除的支援卡(0-%d, 空格隔开):" % (len(support) - 1))
+            valid_index = self.judge_input(index, 0, len(support) - 1)
             if len(valid_index) == 1:
                 break
             else:
@@ -357,7 +385,8 @@ class Game:
         s_dice_type = " ".join(dice_type)
         print("%s, 您的骰子为 %s" % (player.name, s_dice_type))
         cost_state = player.check_cost(cost)
-        if state:
+        if cost_state:
+            print(cost_state)
             cost_indexes = []
             for key, value in cost_state.items():
                 start_index = 0
@@ -479,27 +508,49 @@ class Game:
         card_cost = card.get_cost()
         state = player.check_cost(card_cost)
         if state:
+            obj = None
             if effect_obj == "select":
                 char_index = self.ask_player_choose_character(player)
                 obj = player.characters[char_index]
             elif effect_obj == "summon":
-                pass
+                summon_index = self.ask_player_remove_summon(player)
+                obj = player.summons[summon_index]
             elif effect_obj == "oppose":
-                pass
+                oppose = self.players[~self.now_player]
+                char_index = self.ask_player_choose_character(oppose)
+                obj = player.characters[char_index]
             elif effect_obj == "oppose_summon":
-                pass
+                oppose = self.players[~self.now_player]
+                summon_index = self.ask_player_remove_summon(oppose)
+                obj = player.summons[summon_index]
             elif effect_obj == "all_summon":
                 pass
             elif effect_obj == "player":
                 pass
             elif isinstance(effect_obj, list):
                 pass
+            if card.combat_limit:
+                pass
+            if card.use_skill:
+                cost_state = self.skill_cost(card_cost, card.use_skill)
+            else:
+                cost_state = self.no_skill_cost(card_cost)
+            if not cost_state:
+                return False
+            player.remove_hand_card(index)
+            self.add_modify(obj, card.modify, card.name)
+            if card.use_skill:
+                self.handle_skill(player, card.use_skill)
             tag = card.tag
             if "Location" in tag or "Companion" in tag or "Item" in tag:
-                pass
+                for add_state in player.add_support(card.name):
+                    if add_state == "remove":
+                        index = self.ask_player_remove_support(player)
+                        player.remove_support(index)
         else:
             print("费用不足")
             return False
+        return True
 
 
     def handle_skill(self, player, skill_name):
@@ -527,8 +578,10 @@ class Game:
             # TODO 伤害处理
             if element_type in ElementType.__members__:
                 if attackee == "team":
-                    attackee = oppose.get_active_character_obj()
-                effects: list[dict] = self.handle_element_reaction(attackee, element_type)
+                    oppose_active = oppose.get_active_character_obj()
+                else:
+                    oppose_active = attackee
+                effects: list[dict] = self.handle_element_reaction(oppose_active, element_type)
                 reaction = None
                 for effect in effects:
                     for key, value in effect.items():
@@ -542,11 +595,8 @@ class Game:
                         elif key in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
                                     "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
                             extra_attack.append({key: value})
-                if reaction is not None:
-                    attacker_modify_effect = self.invoke_modify("element_attack", attacker, **kwargs, reaction=reaction, damage=init_damage, element=element_type)
-                else:
-                    attacker_modify_effect = self.invoke_modify("element_attack", attacker, **kwargs, damage=init_damage, element=element_type)
-                oppose_state = attackee.change_hp(-init_damage)
+                attacker_modify_effect = self.invoke_modify("element_attack", attacker, **kwargs, reaction=reaction, damage=init_damage, element=element_type)
+                oppose_state = oppose_active.change_hp(-init_damage)
                 if oppose_state == "die":
                     self.handle_oppose_dead(oppose)
             elif element_type == "PHYSICAL":
@@ -579,7 +629,7 @@ class Game:
         pass
 
     def add_modify(self, invoker: Character, modify, modify_name):
-        player = self.players[~self.now_player]
+        player = self.players[self.now_player]
         oppose = self.players[~self.now_player]
         for each in modify:
             if "IMMEDIATE" in each["time_limit"]:
@@ -623,6 +673,7 @@ class Game:
         new_modifies.append({modify_name: modify, "time_limit": time_limit})
         for i in need_del:
             new_modifies.pop(i)
+        print(new_modifies)
         return new_modifies
 
     def invoke_modify(self, operation, invoker, **kwargs):
@@ -632,7 +683,7 @@ class Game:
         oppose = self.players[~self.now_player]
         return_effect = []
         if "modify" in kwargs :
-            all_related_modifies.append(kwargs["modify"])
+            all_related_modifies = kwargs["modify"]
         if operation == "pierce":
             for modify in player.team_modifier:
                 for key, value in modify.items():
@@ -661,7 +712,7 @@ class Game:
             for modify_name, modify in each.items():
                 if modify_name != "time_limit":
                     condition = modify["condition"]
-                    satisfy_condition = self.check_condition(condition, kwargs["additional"])
+                    satisfy_condition = self.check_condition(condition, **kwargs)
                     if satisfy_condition:
                         time_limit = each["time_limit"]
                         for limit_type, limit in time_limit.items():
@@ -679,19 +730,52 @@ class Game:
                                 break
                     if satisfy_condition:
                         effect_obj = modify["effect_obj"]
+                        effect = modify["effect"]
                         if EffectObj[effect_obj] == EffectObj.COUNTER:
-                            for counter_name, counter_change in modify["effect"].items():
+                            for counter_name, counter_change in effect.items():
                                 if isinstance(counter_change, str):
                                     invoker.counter[counter_name] += eval(counter_change)
                                 else:
                                     invoker.counter[counter_name] = counter_change
-                            print(invoker.counter)
+                        elif EffectObj[effect_obj] == EffectObj.PLAYER:
+                            for effect_type, effect_value in effect.items:
+                                if effect_type == "REROLL":
+                                    for _ in range(effect_value):
+                                        indexes = self.ask_player_reroll_dice(player)
+                                        player.reroll(indexes)
+                                        dice_type = self.get_player_dice_info(player)
+                                        s_dice_type = " ".join(dice_type)
+                                        print("%s, 您的骰子为 %s" % (player.name, s_dice_type))
+                                elif effect_type == "DRAW_CARD":
+                                    if isinstance(effect_value, int):
+                                        player.draw(effect_value)
+                                    else:
+                                        if effect_value.startswith("TYPE_"):
+                                            pass
+                                elif effect_type == "ADD_CARD":
+                                        player.append_hand_card(effect_value)
+                                elif effect_type == "APPEND_DICE":
+                                    if isinstance(effect_value, list):
+                                        for dice in effect_value:
+                                            if dice == "RANDOM":
+                                                player.append_random_dice()
+                                            elif dice == "BASE":
+                                                player.append_base_dice()
+                                            else:
+                                                player.append_special_dice(dice)
+                                    else:
+                                        if effect_value == "RANDOM":
+                                            player.append_random_dice()
+                                        elif effect_value == "BASE":
+                                            player.append_base_dice()
+                                        else:
+                                            player.append_special_dice(effect_value)
                         else:
-                            effect = modify["effect"]
+
                             return_effect.append(effect)
         return return_effect
 
-    def check_condition(self, condition, *args):
+    def check_condition(self, condition, **kwargs):
         if condition:
             for each in condition:
                 if isinstance(each, str):
@@ -702,13 +786,11 @@ class Game:
                         else:
                             return False
                     else:
-                        if each not in args:
-                            return False
+                        pass
                 elif isinstance(each, list):
                     pass
-            return True
-        else:
-            return True
+        return True
+
 
     def handle_state(self, invoker: Character, combat_state):
         # TODO modify修改modify
@@ -741,12 +823,12 @@ class Game:
         elif {ElementType.ELECTRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.PYRO)
-            effect.append({"ELECTRO": "+2", "PYRO": "+2", "add_modify":[{"condition":["IS_ACTIVE"], "effect":{"CHANGE_CHARACTER": "-1"}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":{"IMMEDIATE": 1}}], "reaction": "OVERLOADED"})
+            effect.append({"ELECTRO": "+2", "PYRO": "+2", "add_modify":[{"category": "extra", "condition":["IS_ACTIVE"], "effect":{"CHANGE_CHARACTER": "-1"}, "effect_obj":"OPPOSE_ACTIVE", "time_limit":{"IMMEDIATE": 1}}], "reaction": "OVERLOADED"})
         elif {ElementType.HYDRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.HYDRO)
             applied_element.remove(ElementType.CRYO)
-            effect.append({"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN", "add_modify":[{"condition":[], "effect":{"FROZEN": "TRUE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}},
-                                                                      {"condition":[["BEING_HIT_BY", "PHYSICAL", "PYRO"]], "effect":{"FROZEN": "FALSE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}}]})
+            effect.append({"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN", "add_modify":[{"category": "special", "condition":[], "effect":{"FROZEN": "TRUE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}},
+                                                                      {"category": "defense", "condition":[["BEING_HIT_BY", "PHYSICAL", "PYRO"]], "effect":{"FROZEN": "FALSE", "HURT": "+2"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}}]})
         elif {ElementType.ELECTRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.ELECTRO)
@@ -784,7 +866,7 @@ class Game:
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    effect.append({"GEO": "+1", "add_modify": [{"condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}, "stack": 2 ,"repeated": "True"}],
+                    effect.append({"GEO": "+1", "add_modify": [{"category": "defense", "condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}, "stack": 2 ,"repeated": "True"}],
                                    "reaction": "CRYSTALLIZE", "crystallize_element": element.name})
                     break
         trigger_obj.application = list(applied_element)

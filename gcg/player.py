@@ -42,6 +42,7 @@ class Player:
         self.current_character = None
         self.round_has_end = True
         self.team_modifier = []
+        self.max_dice = 16
 
     def draw(self, num):
         if len(self.cards) < num:
@@ -99,11 +100,22 @@ class Player:
 
     def get_standby_obj(self):
         if self.current_character is not None:
+            character = self.characters.copy()
+            character.pop(self.current_character)
             standby = []
-            for i in range(len(self.characters)):
-                if i != self.current_character and self.characters[i].alive:
-                    standby.append(self.characters[i])
+            for char in character:
+                if char.alive:
+                    standby.append(char)
             return standby
+
+    def get_no_self_obj(self, character: Character):
+        characters = self.characters.copy()
+        characters.remove(character)
+        other = []
+        for char in characters:
+            if char.alive:
+                other.append(char)
+        return other
 
     def roll(self):
         for i in range(self.dice_num):
@@ -115,6 +127,10 @@ class Player:
     def append_random_dice(self):
         self.dices.append(Dice())
         self.dices[-1].roll()
+
+    def append_base_dice(self):
+        self.dices.append(Dice())
+        self.dices[-1].roll_base()
 
     def append_special_dice(self, element):
         self.dices.append(Dice())
@@ -133,6 +149,9 @@ class Player:
         indexes = sorted(indexes, reverse=True)
         for index in indexes:
             self.remove_dice(index)
+
+    def append_hand_card(self, card_name):
+        self.hand_cards.append(Card(card_name))
 
     def remove_hand_card(self, index):
         self.hand_cards.pop(index)
@@ -209,9 +228,9 @@ class Player:
                 for each in valid_list:
                     score = 0
                     for element in each:
-                        if element in active_element:
+                        if element == active_element:
                             score += -1
-                        elif element == team_element:
+                        elif element in team_element:
                             score += 0
                         elif element == "OMNI":
                             score += -5
@@ -345,7 +364,7 @@ class Player:
                     return False  # 无意义，只起跳过作用
                 else:
                     usage = get_summon_usage(summon_name)
-                    summon_obj.stack = min(summon_obj.usage + usage, summon_obj.stack * usage)
+                    summon_obj.usage = min(summon_obj.usage + usage, summon_obj.stack * usage)
                     return True  # 无意义，只起跳过作用
         else:
             if len(self.summons) >= self.max_summon:
@@ -361,13 +380,23 @@ class Player:
             summon_name_list.append(summon.name)
         return summon_name_list
 
-    def trigger_summon(self):
-        for summon in self.summons:
-            effect = summon.effect
-            for effect_type, effect in effect.items():
+    def trigger_summon(self, summon: Summon, consume_usage):
+        effect = summon.effect.copy()
+        for each in effect:
+            effect_obj = each["effect_obj"]
+            del each["effect_obj"]
+            for effect_type, effect_value in each.items():
                 if effect_type == "damage":
-                    yield "damage", summon, effect
-
+                    yield "damage", each
+                elif effect_type == "heal":
+                    if effect_obj == "all":
+                        for char in self.characters:
+                            char.change_hp(effect_value)
+                    elif effect_obj == "active":
+                        self.characters[self.current_character].change_hp(effect_value)
+        summon_state = summon.consume_usage(consume_usage)
+        if summon_state == "remove":
+            self.summons.remove(summon)
 
     def get_card_obj(self, index):
         return self.hand_cards[index]
@@ -383,4 +412,17 @@ class Player:
     def get_support_name(self):
         return self.supports
 
+    def get_character_nation(self):
+        nation_list = []
+        for character in self.characters:
+            nation_list.append(character.nation)
+        return nation_list
+
+    def get_most_hurt(self):
+        characters = self.get_standby_obj()
+        hp_list = []
+        for character in characters:
+            hp_list.append(character.get_hp())
+        min_value = min(hp_list)
+        return characters[characters.index(min_value)]
 
