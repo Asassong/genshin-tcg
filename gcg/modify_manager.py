@@ -1,10 +1,26 @@
+# Genius Invokation TCG, write in python.
+# Copyright (C) 2023 Asassong
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
 """
-(GAME_START)->DRAW->START->ROLL->ACTION->USE_SKILL->ATTACK->DEFENSE->EXTRA->END  ->(GAME_END)
-                  ->STAGE               ->COST     ->COMBAT->COMBAT        ->STAGE
-(GAME_START)->DRAW->START->ROLL         ->CHANGE_COST->CHANGE->END  ->(GAME_END)
-                                        ->COST
-(GAME_START)->DRAW->START->ROLL         ->CARD_COST->PLAY_CARD->END  ->(GAME_END)
-                                        ->COST
+(GAME_START)->(INIT_DRAW)->START->||: ROLL->ACTION->USE_SKILL->?INFUSION?->ATTACK->DEFENSE->SHIELD->EXTRA->END  ->DRAW :||->(GAME_END)
+                         ->STAGE                  ->COST                 ->COMBAT->COMBAT                ->STAGE
+(GAME_START)->(INIT_DRAW)->START->||: ROLL        ->CHANGE_COST->CHANGE->END  ->DRAW :||->(GAME_END)
+                                                  ->COST
+(GAME_START)->(INIT_DRAW)->START->||: ROLL        ->CARD_COST->PLAY_CARD->END  ->DRAW :||->(GAME_END)
+                                                  ->COST
 DRAW      DRAW_NUM
           DRAW_TIMES
 
@@ -27,7 +43,7 @@ SUMMON    ADD_SUMMON
 
 CHANGE    CHANGE_ACTION
           CHANGE_TO
-          BE_CHANGED_AS
+          BE_CHANGED_AS_ACTIVE
           CHANGE_COST
 
 COST      CHANGE_COST
@@ -36,26 +52,33 @@ COST      CHANGE_COST
 
 USE_SKILL SKILL_COST
           ADD_ENERGY
+          COUNTER
+
+ACTION    USE_SKILL
+
+INFUSION
 
 COMBAT    ATTACK    DMG
-                    CREATE_DMG
-                    INFUSION
           DEFENSE   HURT
-                    SHIELD
-          HEAL
-          SKILL
-          COUNTER
-          TRIGGER_SUMMON
+
+SHIELD
+
+EXTRA     HEAL
+          TRIGGER
           CONSUME_SUMMON_USAGE
+          CREATE_DMG
 STAGE     END
 """
 from player import Player
 from character import Character
-from enums import EffectObj, TimeLimit, WeaponType
-from game import Game
+from enums import EffectObj, TimeLimit, WeaponType, ElementType
+# from game import Game
+from typing import Optional
+from utils import update_or_append_dict
 
 
-def add_modify(game: Game, invoker: Character, modify: list, modify_name: str, force=False):
+
+def add_modify(game, invoker: Character, modify: list, modify_name: str, force=False):
     player = game.get_now_player()
     oppose = game.get_oppose()
     for index, each in enumerate(modify):
@@ -111,168 +134,177 @@ def append_modify(old_modify: list, new_modify: tuple[str, dict], force=False):
     new_modifies.append({modify_name: modify})
     for i in need_del:
         new_modifies.pop(i)
-    print(new_modifies)
     return new_modifies
 
 
-def invoke_modify(game: Game, operation: str, invoker: Character, **kwargs):
-    player = game.get_now_player()
-    oppose = game.get_oppose()
+def invoke_modify(game, operation: str, invoker: Optional[Character], player=None, **kwargs):
+    if player is not None:
+        oppose = game.players.copy()
+        oppose.remove(player)
+    else:
+        player = game.get_now_player()
+        oppose = game.get_oppose()
     all_related_modifies = []
-    modify_source = []
-    need_remove_modifies = []
-    left_effect = []
+    print(("team_modify", player.team_modifier))
+    if invoker is not None:
+        print(("invoker_modify", invoker.modifies))
     if "modify" in kwargs:
         all_related_modifies = kwargs["modify"]
-    if operation == "draw": # game -> effect
+    if operation == "draw": # game -> effect, draw阶段无角色
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "draw" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
-        for modify in invoker.modifies:
-            for key, value in modify.items():
-                if value["category"] == "draw" or value["category"] == "any":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
     elif operation == "start":  # game -> effect
-        for modify in player.team_modifier:
-            for key, value in modify.items():
-                if value["category"] == "start" or value["category"] == "any" or value["category"] == "stage":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "roll" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
+        for modify in player.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "start" or value["category"] == "any" or value["category"] == "stage":
+                    all_related_modifies.append(modify)
     elif operation == "roll":  # game -> FIXED_DICE, REROLL
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "roll" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
+    elif operation == "action": # game -> USE_SKILL, effect
         for modify in invoker.modifies:
             for key, value in modify.items():
-                if value["category"] == "roll" or value["category"] == "any":
+                if value["category"] == "action" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
-    elif operation == "action": # SKILL_NAME, game -> USE_SKILL, effect
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "action" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
-        for modify in invoker.modifies:
-            for key, value in modify.items():
-                if value["category"] == "action" or value["category"] == "any":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
     elif operation == "use_skill":  # SKILL_NAME, SKILL_TYPE, skill_cost, add_energy, game -> skill_cost, add_energy
-        for modify in player.team_modifier:
-            for key, value in modify.items():
-                if value["category"] == "use_skill" or value["category"] == "any" or value["category"] == "cost":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "use_skill" or value["category"] == "any" or value["category"] == "cost":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
+        for modify in player.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "use_skill" or value["category"] == "any" or value["category"] == "cost":
+                    all_related_modifies.append(modify)
     elif operation == "change_cost": # CHANGE_COST, change_from, change_to, game -> CHANGE_COST
+        for modify in kwargs["change_from"].modifies:
+            for key, value in modify.items():
+                if value["category"] == "change_cost" or value["category"] == "any" or value["category"] == "cost":
+                    all_related_modifies.append(modify)
+        for modify in kwargs["change_to"].modifies:
+            for key, value in modify.items():
+                if value["category"] == "change_cost" or value["category"] == "any" or value["category"] == "cost":
+                    all_related_modifies.append(modify)
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "change_cost" or value["category"] == "any" or value["category"] == "cost":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
-        for modify in invoker.modifies:
-            for key, value in modify.items():
-                if value["category"] == "change_cost" or value["category"] == "any" or value["category"] == "cost":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
     elif operation == "card_cost":  # card_cost, game -> card_cost
-        for modify in player.team_modifier:
-            for key, value in modify.items():
-                if value["category"] == "card_cost" or value["category"] == "any" or value["category"] == "cost":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "card_cost" or value["category"] == "any" or value["category"] == "cost":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
-    elif operation == "attack":  # SKILL_NAME, SKILL_TYPE, damage, element, (reaction), game -> damage
         for modify in player.team_modifier:
             for key, value in modify.items():
-                if value["category"] == "attack" or value["category"] == "any" or value["category"] == "combat":
+                if value["category"] == "card_cost" or value["category"] == "any" or value["category"] == "cost":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
+    elif operation == "infusion":  # SKILL_NAME, SKILL_TYPE, game -> infusion
+        for modify in invoker.modifies:
+            for key, value in modify.items():
+                if value["category"] == "infusion" or value["category"] == "any":
+                    all_related_modifies.append(modify)
+        for modify in player.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "infusion" or value["category"] == "any":
+                    all_related_modifies.append(modify)
+    elif operation == "attack":  # SKILL_NAME, SKILL_TYPE, damage, element, reaction, game -> damage
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "attack" or value["category"] == "any" or value["category"] == "combat":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
-    elif operation == "defense": # SKILL_TYPE, hurt, element, (reaction), game -> hurt
-        for modify in oppose.team_modifier:
+        for modify in player.team_modifier:
             for key, value in modify.items():
-                if value["category"] == "defense" or value["category"] == "any" or value["category"] == "combat":
+                if value["category"] == "attack" or value["category"] == "any" or value["category"] == "combat":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "oppose"))
+    elif operation == "defense": # SKILL_TYPE, hurt, element, reaction, game -> hurt
         oppose_active = oppose.get_active_character_obj()
         for modify in oppose_active.modifies:
             for key, value in modify.items():
                 if value["category"] == "defense" or value["category"] == "any" or value["category"] == "combat":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "oppose_active"))
-    elif operation == "extra":  # game -> effect
-        for modify in player.team_modifier:
+        for modify in oppose.team_modifier:
             for key, value in modify.items():
-                if value["category"] == "extra" or value["category"] == "any":
+                if value["category"] == "defense" or value["category"] == "any" or value["category"] == "combat":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
+    elif operation == "shield": # hurt, game -> hurt
+        oppose_active = oppose.get_active_character_obj()
+        for modify in oppose_active.modifies:
+            for key, value in modify.items():
+                if value["category"] == "shield" or value["category"] == "any":
+                    all_related_modifies.append(modify)
+        for modify in oppose.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "shield" or value["category"] == "any":
+                    all_related_modifies.append(modify)
+    elif operation == "extra":  # game -> effect
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "extra" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
+        for modify in player.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "extra" or value["category"] == "any":
+                    all_related_modifies.append(modify)
     elif operation == "play_card":  # CARD_TAG, game -> effect
+        for modify in invoker.modifies:
+            for key, value in modify.items():
+                if value["category"] == "play_card" or value["category"] == "any":
+                    all_related_modifies.append(modify)
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "play_card" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
-        for modify in invoker.modifies:
+    elif operation == "change":  # game, change_from, change_to -> change_action
+        for modify in kwargs["change_from"].modifies:
             for key, value in modify.items():
-                if value["category"] == "Play_card" or value["category"] == "any":
+                if value["category"] == "change" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
-    elif operation == "change":  # game, change_from, change_to -> change_action, change_to, change_cost
+        for modify in kwargs["change_to"].modifies:
+            for key, value in modify.items():
+                if value["category"] == "change_cost" or value["category"] == "any" or value["category"] == "cost":
+                    all_related_modifies.append(modify)
         for modify in player.team_modifier:
             for key, value in modify.items():
                 if value["category"] == "change" or value["category"] == "any":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
-        for modify in invoker.modifies:
-            for key, value in modify.items():
-                if value["category"] == "change" or value["category"] == "any":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
     elif operation == "end":  # game -> effect
-        for modify in player.team_modifier:
-            for key, value in modify.items():
-                if value["category"] == "end" or value["category"] == "any" or value["category"] == "stage":
-                    all_related_modifies.append(modify)
-                    modify_source.append((key, "player"))
         for modify in invoker.modifies:
             for key, value in modify.items():
                 if value["category"] == "end" or value["category"] == "any" or value["category"] == "stage":
                     all_related_modifies.append(modify)
-                    modify_source.append((key, "invoker"))
+        for modify in player.team_modifier:
+            for key, value in modify.items():
+                if value["category"] == "end" or value["category"] == "any" or value["category"] == "stage":
+                    all_related_modifies.append(modify)
+    need_remove_modifies = []
+    left_effect = {"extra_effect":[]}
+    special_effect = {}
+    had_invoked_modify = []
+    exclusive_modify = []
     for each in all_related_modifies:
-        for modify_name, modify in each:
+        for modify_name, modify in each.items():
+            if modify_name in had_invoked_modify:
+                if "repeated" not in modify:
+                    continue
+                else:
+                    if not modify["repeated"]:
+                        continue
             condition = modify["condition"]
-            satisfy_condition = check_condition(condition, **kwargs, invoke=invoker)
+            satisfy_condition = check_condition(condition, game, **kwargs, invoke=invoker)
+            special = []
             if satisfy_condition:
+                special = satisfy_condition[1]
                 time_limit = modify["time_limit"]
                 for limit_type, limit in time_limit.items():
                     if TimeLimit[limit_type] == TimeLimit.ROUND:
@@ -281,12 +313,164 @@ def invoke_modify(game: Game, operation: str, invoker: Character, **kwargs):
                             satisfy_condition = False
                     else:  # 无限不用处理， 立即生效在add_modify时处理, 持续回合在回合结束时处理
                         break
+            if "EXCLUSIVE" in special:
+                super_modify_name = modify_name.rsplit("_", 1)[0]
+                if super_modify_name in exclusive_modify:
+                    continue
+                else:
+                    exclusive_modify.append(super_modify_name)
+            if satisfy_condition:
+                effect_obj = modify["effect_obj"]
+                consume = False
+                if isinstance(effect_obj, str):
+                    effect = modify["effect"]
+                    print(("effect", effect))
+                    if EffectObj[effect_obj] == EffectObj.COUNTER:
+                        for counter_name, counter_change in effect.items():
+                            if isinstance(counter_change, str):
+                                invoker.counter[counter_name] += eval(counter_change)
+                            else:
+                                invoker.counter[counter_name] = counter_change
+                        consume |= True
+                    else:
+                        for effect_type, effect_value in effect.items():
+                            if effect_type == "REROLL":  # 这里有潜在的坑，当1和"+1"同时出现时，但我想不到它们什么时候可能同时出现
+                                if effect_type in left_effect:
+                                    if isinstance(effect_value, str):
+                                        left_effect[effect_type] = "+" + str(eval(str(left_effect[effect_type]) + effect_value))
+                                    else:
+                                        left_effect[effect_type] += effect_value
+                                else:
+                                    left_effect.update({effect_type: effect_value})
+                                consume |= True
+                            elif effect_type == "FIXED_DICE":
+                                if effect_type in left_effect:
+                                    left_effect[effect_type] += effect_value
+                                else:
+                                    left_effect.update({effect_type: effect_value})
+                                consume |= True
+                            elif effect_type == "USE_SKILL":  # 同时两个技能，不可能的吧
+                                left_effect.update({effect_type: effect_value})
+                                consume |= True
+                            elif effect_type == "CHANGE_COST":
+                                if "cost" in kwargs:
+                                    cost = kwargs["cost"]
+                                    if "ANY" in cost:
+                                        if cost["ANY"] != 0:
+                                            cost["ANY"] += eval(effect_value)
+                                            consume |= True
+                                        else:
+                                            if eval(effect_value) > 0:
+                                                cost["ANY"] += eval(effect_value)
+                                                consume |= True
+                            elif effect_type == "CHANGE_ACTION": #  change默认为战斗行动
+                                if "change_action" not in left_effect:
+                                    left_effect["change_action"] = "fast"
+                                    consume |= True
+                            elif effect_type == "SET_ENERGY":
+                                if isinstance(effect_value, str):
+                                    if "add_energy" in kwargs:
+                                        left_effect["add_energy"] = eval(kwargs["add_energy"])
+                                        consume |= True
+                                else:
+                                    left_effect["set_energy"] = effect_value
+                                    consume |= True
+                            elif effect_type in ["COST_ANY", "COST_PYRO", "COST_HYDRO", "COST_ELECTRO", "COST_CRYO", "COST_DENDRO", "COST_ANEMO", "COST_GEO", "COST_ALL", "COST_ELEMENT"]:
+                                if "cost" in kwargs:
+                                    cost: dict = kwargs["cost"]
+                                    element_type = effect_type.replace("COST_", "")
+                                    if element_type in ElementType.__members__:
+                                        if element_type in cost:
+                                            cost[element_type] += eval(effect_value)
+                                            if cost[element_type] <= 0:
+                                                cost.pop(element_type)
+                                                consume |= True
+                                    elif element_type == "ANY":
+                                        if element_type in cost:
+                                            cost[element_type] += eval(effect_value)
+                                            if cost[element_type] <= 0:
+                                                cost.pop(element_type)
+                                                consume |= True
+                                    elif element_type == "ELEMENT":
+                                        consume |= False
+                                        for element in ['CRYO', 'HYDRO', 'PYRO', 'ELECTRO', 'GEO', 'DENDRO', 'ANEMO']:
+                                            if element in cost:
+                                                cost[element] += eval(effect_value)
+                                                consume |= True
+                                                if cost[element] <= 0:
+                                                    cost.pop(element)
+                                                break
+                                    elif element_type == "ALL": # 暂时只写same
+                                        if "SAME" in cost:
+                                            cost["SAME"] += eval(effect_value)
+                                            if cost["SAME"] <= 0:
+                                                cost.pop("SAME")
+                                                consume |= True
+                            elif effect_type == "DMG":
+                                if "{NUMBER}" in effect_value: # 多个NUMBER？
+                                    for each_special in special:
+                                        if isinstance(each_special, dict):
+                                            if "NUMBER" in each_special:
+                                                effect_value = effect_value.format(NUMBER=each_special["NUMBER"])
+                                                break
+                                if "damage" in kwargs:
+                                    if kwargs["damage"].startswith("*") or kwargs["damage"].startswith("/"):
+                                        special_effect["damage"] = kwargs["damage"]
+                                    else:
+                                        kwargs["damage"] += eval(effect_value)
+                                    consume |= True
+                            elif effect_type == "HURT":
+                                if "hurt" in kwargs:
+                                    if kwargs["hurt"].startswith("*") or kwargs["hurt"].startswith("/"):
+                                        special_effect["hurt"] = kwargs["hurt"]
+                                        consume |= True
+                                    else:
+                                        if kwargs["hurt"] > 0:
+                                            kwargs["hurt"] += eval(effect_value)
+                                            consume |= True
+                            elif effect_type == "SHIELD":
+                                if "hurt" in kwargs:
+                                    if kwargs["hurt"] > 0:
+                                        if kwargs["hurt"] >= effect_value:
+                                            kwargs["hurt"] -= effect_value
+                                            need_remove_modifies.append(modify_name)
+                                        else:
+                                            effect["SHIELD"] -= kwargs["hurt"]
+                                            kwargs["hurt"] = 0
+                                        consume |= True
+                            elif effect_type == "INFUSION":
+                                if "infusion" not in left_effect:
+                                    left_effect["infusion"] = effect_value
+                                    consume |= True
+                            elif effect_type == "ADD_MODIFY":
+                                if isinstance(effect_value, list):
+                                    add_modify(game, invoker, effect_value, modify_name + "_inner")
+                                else:
+                                    add_modify(game, invoker, [effect_value], modify_name + "_inner")
+                                consume |= True
+                            else:
+                                left_effect["extra_effect"].append(({effect_type: effect_value}, effect_obj))
+                                consume |= True
+                if consume:
+                    had_invoked_modify.append(modify_name)
+                    consume_modify_usage(modify)
+    if "cost" in kwargs:
+        left_effect["cost"] = kwargs["cost"]
+    if "damage" in kwargs:
+        if "damage" in special_effect:
+            kwargs["damage"] = eval(str(kwargs["damage"]) + special_effect["damage"])
+        left_effect["damage"] = -(-kwargs["damage"]//1) # ceil
+    if "hurt" in kwargs:
+        kwargs["hurt"] = max(kwargs["hurt"], 0)
+        if "hurt" in special_effect:
+            kwargs["hurt"] = eval(str(kwargs["hurt"]) + special_effect["hurt"])
+        left_effect["hurt"] = -(-kwargs["hurt"]//1)  # ceil
+    return left_effect
 
 def remove_modify():
     pass
 
-
-def check_condition(condition, game:Game, **kwargs):
+def check_condition(condition, game, **kwargs):
     special = []
     if condition:
         for each in condition:
@@ -384,6 +568,11 @@ def check_condition(condition, game:Game, **kwargs):
                             return False
                 elif each == "IS_ACTIVE":
                     if game.get_now_player().get_active_character_obj() == kwargs["invoke"]:
+                        continue
+                    else:
+                        return False
+                elif each == "IS_NOT_ACTIVE":
+                    if game.get_now_player().get_active_character_obj() != kwargs["invoke"]:
                         continue
                     else:
                         return False
@@ -578,7 +767,7 @@ def check_condition(condition, game:Game, **kwargs):
                     else:
                         return False
                 elif each[0] == "HAVE_CARD":
-                    game: Game = kwargs["game"]
+                    game = kwargs["game"]
                     cards = game.get_now_player().hand_cards
                     if each[1] in cards:
                         continue
@@ -670,4 +859,32 @@ def check_condition(condition, game:Game, **kwargs):
                             continue
                         else:
                             return False
-    return True
+    return True, special
+
+def consume_modify_usage(modify, operation="use"):
+    time_limit = modify["time_limit"]
+    if operation == "use":
+        if "USAGE" in time_limit:
+            time_limit["USAGE"] -= 1
+            if time_limit["USAGE"] == 0:
+                return "remove"
+        elif "ROUND" in time_limit:
+            time_limit["ROUND"][1] -= 1
+    elif operation == "end":
+        if "ROUND" in time_limit:
+            time_limit["ROUND"][1] = time_limit["ROUND"][0]
+        elif "DURATION" in time_limit:
+            time_limit["DURATION"] -= 1
+            if time_limit["DURATION"] == 0:
+                return "remove"
+    elif operation == "act":
+        if "ACT" in time_limit:
+            time_limit["ACT"] -= 1
+            if time_limit["ACT"] == 0:
+                return "remove"
+        elif "PREPARE" in time_limit:
+            prepare: list = time_limit["PREPARE"]
+            prepare[0] += 1
+            if prepare[0] == prepare[1]:
+                return "ready"
+    return None

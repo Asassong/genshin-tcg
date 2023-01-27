@@ -1,5 +1,10 @@
 {
-  "Game": {},
+  "Game": {
+    "Player": ["player1", "player2"],
+    "init_card_num": 5,
+    "switch_hand_times": 1,
+    "switch_dice_times": 1
+  },
   "Player":{
     "player1": {
       "character": ["Mona", "Ganyu", "Keqing"],
@@ -8,7 +13,14 @@
       "Dawn Winery", "Favonius Cathedral", "Katheryne", "Timmie", "Chang the Ninth", "Chang the Ninth",
       "The Bestest Travel Companion!", "The Bestest Travel Companion!", "Changing Shifts", "Changing Shifts",
       "Strategize", "Strategize", "I Haven't Lost Yet!", "Leave It to Me!", "Leave It to Me!", "Lotus Flower Crisp",
-      "Lotus Flower Crisp", "Sweet Madame", "Mondstadt Hash Brown", "Mondstadt Hash Brown"]
+      "Lotus Flower Crisp", "Sweet Madame", "Mondstadt Hash Brown", "Mondstadt Hash Brown"],
+      "max_summon": 4,
+      "max_support": 4,
+      "deck_num": 30,
+      "character_num": 3,
+      "max_hand_card": 10,
+      "dice_num": 8,
+      "max_dice": 16
     },
     "player2": {
       "character": ["Fischl", "Collei", "Keqing"],
@@ -18,7 +30,14 @@
       "Elemental Resonance: High Voltage", "The Bestest Travel Companion!", "The Bestest Travel Companion!",
       "Changing Shifts", "Toss-Up", "Toss-Up", "Strategize", "Strategize", "I Haven't Lost Yet!", "I Haven't Lost Yet!",
       "When the Crane Returned", "When the Crane Returned", "Quick Knit", "Quick Knit", "Lotus Flower Crisp",
-      "Lotus Flower Crisp"]
+      "Lotus Flower Crisp"],
+      "max_summon": 4,
+      "max_support": 4,
+      "deck_num": 30,
+      "character_num": 3,
+      "max_hand_card": 10,
+      "dice_num": 8,
+      "max_dice": 16
     }
   }
 }

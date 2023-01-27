@@ -1,4 +1,4 @@
-# Genius Invokation TCG, write by python.
+# Genius Invokation TCG, write in python.
 # Copyright (C) 2023 Asassong
 #
 # This program is free software: you can redistribute it and/or modify
@@ -29,8 +29,6 @@ class Player:
         self.name = ""
         self.max_summon = 4
         self.max_support = 4
-        self.max_card = 30
-        self.character_num = 3
         self.max_hand_card = 10
         self.dice_num = 8
         self.summons: list[Summon] = []
@@ -47,11 +45,10 @@ class Player:
     def draw(self, num):
         if len(self.cards) < num:
             num = len(self.cards)
-        elif len(self.hand_cards) + num > self.max_hand_card:
-            num = self.max_hand_card - len(self.hand_cards)
         for i in range(num):
             draw_index = random.randint(0, len(self.cards)-1)
-            self.hand_cards.append(self.cards[draw_index])
+            if len(self.hand_cards) < self.max_hand_card:
+                self.hand_cards.append(self.cards[draw_index])
             self.cards.pop(draw_index)
 
     def redraw(self, cards):
@@ -61,6 +58,17 @@ class Player:
             self.hand_cards.pop(i)
         self.draw(len(drop_cards))
 
+    def draw_type(self, card_type):
+        valid_card = []
+        for index, card in enumerate(self.cards):
+            if card_type in card.tag:
+                valid_card.append(index)
+        if valid_card:
+            draw_index = random.randint(0, len(valid_card) - 1)
+            if len(self.hand_cards) < self.max_hand_card:
+                self.hand_cards.append(self.cards[valid_card[draw_index]])
+            self.cards.pop(valid_card[draw_index])
+
     def init_card(self, card_list):
         for card in card_list:
             self.cards.append(Card(card))
@@ -69,9 +77,8 @@ class Player:
         return self.hand_cards
 
     def init_character(self, character_list):
-        if len(character_list) == self.character_num:
-            for character_name in character_list:
-                self.characters.append(Character(character_name))
+        for character_name in character_list:
+            self.characters.append(Character(character_name))
 
     def get_character(self):
         return self.characters
@@ -98,6 +105,15 @@ class Player:
         else:
             return self.choose_character(new_character_index)
 
+    def auto_change_active(self, change_direction):
+        suppose_index = self.current_character + change_direction
+        while True:
+            state = self.choose_character(suppose_index % len(self.characters))
+            if state:
+                break
+            else:
+                suppose_index += change_direction
+
     def get_standby_obj(self):
         if self.current_character is not None:
             character = self.characters.copy()
@@ -117,8 +133,14 @@ class Player:
                 other.append(char)
         return other
 
-    def roll(self):
-        for i in range(self.dice_num):
+    def roll(self, extra_num = 0, fixed_dice = None):
+        if fixed_dice is not None:
+            fixed_num = len(fixed_dice)
+            for dice in fixed_dice:
+                self.append_special_dice(dice)
+        else:
+            fixed_num = 0
+        for i in range(self.dice_num + extra_num - fixed_num):
             self.append_random_dice()
 
     def get_dice(self):
@@ -289,6 +311,7 @@ class Player:
                 update_or_append_dict(real_cost, valid_dice)
             else:
                 return False
+        print(("cost", real_cost))
         return real_cost
 
     def recheck_cost(self, cost, input_index):

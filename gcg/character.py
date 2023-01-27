@@ -1,4 +1,4 @@
-# Genius Invokation TCG, write by python.
+# Genius Invokation TCG, write in python.
 # Copyright (C) 2023 Asassong
 #
 # This program is free software: you can redistribute it and/or modify
@@ -45,6 +45,9 @@ class Character:
             self.alive = False
             return "die"
 
+    def get_hp(self):
+        return self._hp
+
     def check_need_heal(self):  # 满血时有些卡牌不用触发治疗
         if self._hp == self.max_hp:
             return False
@@ -77,7 +80,7 @@ class Character:
         passive_skill = []
         for key, value in self.skills.items():
             if "Passive Skill" in value["type"]:
-                passive_skill.append(value)
+                passive_skill.append(key)
         return passive_skill
 
     def get_skills_cost(self, skill_name):
