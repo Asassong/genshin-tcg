@@ -1,4 +1,4 @@
-# Genius Invokation TCG, write by python.
+# Genius Invokation TCG, write in python.
 # Copyright (C) 2023 Asassong
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,17 +14,17 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from utils import read_json
+from utils import read_json, DuplicateDict
 
 class Summon:
     def __init__(self, name):
-        self.name = name
+        self._name = name
         detail = summon_dict[name]
-        self.effect = detail["effect"]
-        self.usage = detail["effect"]
-        self.modifies = []
+        self.effect: list[dict] = detail["effect"]
+        self.usage = detail["usage"]
+        self.modifies = DuplicateDict()
         if "modify" in detail:
-            self.modifies = detail["modify"]
+            self.init_modify(detail["modify"])
         self.type = {}
         if "type" in detail:
             self.type = detail["type"]
@@ -34,17 +34,30 @@ class Summon:
         self.stack = 1
         if "stack" in detail:
             self.stack = detail["stack"]
+        self.element = None
+        if "element" in detail:
+            self.element = detail["element"]
+
 
     def consume_usage(self, value):
         if isinstance(self.usage, str):
-            usage = eval(self.usage)
-            if usage <= 0:
-                return "remove"
+            pass
+            # usage = eval(self.usage)
+            # if usage <= 0:
+            #     return "remove"
         else:
             self.usage -= value
             if self.usage <= 0:
                 return "remove"
         return None
+
+    def get_name(self):
+        return self._name
+
+    def init_modify(self, modifies):
+        name = self.get_name()
+        for index, modify in enumerate(modifies):
+            self.modifies.update({name + "_" + str(index): modify})
 
 def get_summon_usage(summon_name):
     detail = summon_dict[summon_name]

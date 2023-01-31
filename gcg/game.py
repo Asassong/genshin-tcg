@@ -36,6 +36,7 @@ class Game:
         self.state_dict = read_json("state.json")
         self.now_player = None
         self.max_round = 15
+        self.dead_info: set = set()
 
     def start_game(self):
         config = read_json("config.json")
@@ -112,6 +113,8 @@ class Game:
             player.round_has_end = False
         self.now_player = self.first_player
         while True:
+            if self.stage == GameStage.GAME_END:
+                break
             round_has_end = True
             action_type = None
             for player in self.players:
@@ -143,6 +146,7 @@ class Game:
                     self.element_tuning(now_player)
                 elif PlayerAction(action) == PlayerAction.CHANGE_CHARACTER:
                     change_state = self.player_change_avatar(now_player)
+                    print(("change_state", change_state))
                     if not change_state:
                         continue
                     elif change_state == "fast":
@@ -175,6 +179,8 @@ class Game:
                 for effect, value in player.trigger_summon(summon, 1):
                     if effect == "damage":
                         self.handle_damage(summon, "team", value)
+            if self.stage == GameStage.GAME_END:
+                break
             player.dices.clear()
             effect = invoke_modify(self, "draw", None)
             player.draw(2)
@@ -452,8 +458,7 @@ class Game:
         change_action = "combat"
         active = player.get_active_character_obj()
         new_active = self.ask_player_choose_character(player)
-        change_state = player.change_active_character(new_active)
-        if not change_state:
+        if player.check_character_alive(new_active):
             change_cost_effect = invoke_modify(self, "change_cost", active, cost=normal_cost, change_from=active, change_to=player.characters[new_active])
             cost_state = self.no_skill_cost(change_cost_effect["cost"])
             change_cost_effect.pop("cost")
@@ -461,7 +466,7 @@ class Game:
                 change_action_effect = invoke_modify(self, "change", active, change_from=active, change_to=player.characters[new_active])
                 if "change_action" in change_action_effect:
                     change_action = change_action_effect["change_action"]
-                self.player_change_avatar(player)
+                player.choose_character(new_active)
             else:
                 return False
         else:
@@ -602,6 +607,8 @@ class Game:
         use_skill_effect = invoke_modify(self, "use_skill", invoker, skill_name=skill_name, skill_type=skill_type, cost=skill_cost, add_energy=add_energy)
         if "add_energy" in use_skill_effect:
             invoker.change_energy(use_skill_effect["add_energy"])
+        else:
+            invoker.change_energy(add_energy)
         if "cost" in use_skill_effect:
             real_cost = use_skill_effect["cost"]
             # TODO 万一不用技能了，modify就白调了
@@ -623,27 +630,21 @@ class Game:
     def handle_damage(self, attacker, attackee: Union[str, Character], damage: dict[str, int], **kwargs):
         oppose = self.get_oppose()
         extra_attack = []
-        element_reaction_add_modify = []
+        if attackee == "team":
+            oppose_active = oppose.get_active_character_obj()
+        else:
+            oppose_active = attackee
         for element_type, init_damage in damage.items():
             if element_type in ElementType.__members__:
-                if attackee == "team":
-                    oppose_active = oppose.get_active_character_obj()
-                else:
-                    oppose_active = attackee
                 effects: list[dict] = self.handle_element_reaction(oppose_active, element_type)
                 reaction = None
                 for effect in effects:
                     for key, value in effect.items():
                         if key == element_type:
                             init_damage += eval(effect[key])
-                        elif "add_modify" == key:
-                            for index, add in enumerate(effect["add_modify"]):
-                                if "reaction" in effect:
-                                    reaction = effect["reaction"]
-                                    element_reaction_add_modify.append((attacker, add + "_inner_" + str(index), effect["reaction"]))
                         elif key in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
                                     "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
-                            extra_attack.append({key: value})
+                            extra_attack.append({key.replace("_DMG", ""): value})
                 attack_effect = invoke_modify(self, "attack", attacker, **kwargs, reaction=reaction, damage=init_damage, element=element_type)
                 damage = attack_effect["damage"]
                 attack_effect.pop("damage")
@@ -661,10 +662,6 @@ class Game:
                 if "infusion" in infusion_effect:
                     self.handle_damage(attacker, attackee, {infusion_effect["infusion"]: init_damage}, **kwargs)
                 else:
-                    if attackee == "team":
-                        oppose_active = oppose.get_active_character_obj()
-                    else:
-                        oppose_active = attackee
                     attack_effect = invoke_modify(self, "attack", attacker, **kwargs, reaction=None,
                                                   damage=init_damage, element=element_type)
                     damage = attack_effect["damage"]
@@ -683,13 +680,28 @@ class Game:
                     oppose_standby = oppose.get_standby_obj()
                 else:
                     oppose_standby = [attackee]
+                # TODO 穿透伤害不能改变伤害，但是可能有其他效果
                 for obj in oppose_standby:
                     oppose_state = obj.change_hp(-init_damage)
                     if oppose_state == "die":
                         self.handle_oppose_dead(oppose)
+        if extra_attack:
+            oppose_other = oppose.get_character().copy().remove(attackee)
+            for key, value in extra_attack:
+                for standby in oppose_other:
+                    self.handle_damage(attacker, standby, {key: value})
 
     def handle_oppose_dead(self, oppose: Player):
-        pass    
+        end = True
+        for index in range(len(oppose.get_character())):
+            if oppose.check_character_alive(index):
+                end = False
+                break
+        if end:
+            self.stage = GameStage.GAME_END
+        else:
+            self.ask_player_choose_character(oppose)
+            self.dead_info.add(oppose)
 
     def handle_state(self, invoker: Character, combat_state):
         # TODO modify修改modify
@@ -706,7 +718,7 @@ class Game:
                         index = self.ask_player_remove_summon(player)
                         player.remove_summon(index)
 
-    def handle_element_reaction(self, trigger_obj: Character, element):
+    def handle_element_reaction(self, trigger_obj: Character, element, type_="oppose"):
         trigger_obj.application.append(ElementType[element])
         applied_element = set(trigger_obj.application)
         effect = []
@@ -722,12 +734,27 @@ class Game:
         elif {ElementType.ELECTRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.PYRO)
-            effect.append({"ELECTRO": "+2", "PYRO": "+2", "add_modify":[{"category": "extra", "condition":["IS_ACTIVE"], "effect":{"CHANGE_CHARACTER": "-1"}, "effect_obj":"OPPOSE", "time_limit":{"IMMEDIATE": 1}}], "reaction": "OVERLOADED"})
+            effect.append({"ELECTRO": "+2", "PYRO": "+2", "reaction": "OVERLOADED"})
+            if type_ == "oppose":
+                add_modify(self, trigger_obj, [{"category": "extra", "condition":["IS_ACTIVE"], "effect":{"CHANGE_CHARACTER": -1}, "effect_obj":"OPPOSE", "time_limit":{"IMMEDIATE": 1}}], "OVERLOADED")
+            else:
+                add_modify(self, trigger_obj, [
+                    {"category": "extra", "condition": ["IS_ACTIVE"], "effect": {"CHANGE_CHARACTER": -1},
+                     "effect_obj": "ALL", "time_limit": {"IMMEDIATE": 1}}], "OVERLOADED")
         elif {ElementType.HYDRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.HYDRO)
             applied_element.remove(ElementType.CRYO)
-            effect.append({"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN", "add_modify":[{"category": "action", "condition":[], "effect":{"FROZEN": "TRUE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}},
-                                                                      {"category": "defense", "condition":[["BEING_HIT_BY", "PHYSICAL", "PYRO"]], "effect":{"FROZEN": "FALSE", "HURT": "+2"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}}]})
+            effect.append({"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN"})
+            if type_ == "oppose":
+                add_modify(self, trigger_obj, [{"category": "action", "condition":[], "effect":{"FROZEN": "TRUE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}},
+                                               {"category": "defense", "condition":[["BEING_HIT_BY", "PHYSICAL", "PYRO"]], "effect":{"FROZEN": "FALSE", "HURT": "+2"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}}], "FROZEN")
+            else:
+                add_modify(self, trigger_obj, [
+                    {"category": "action", "condition": [], "effect": {"FROZEN": "TRUE"}, "effect_obj": "SELF",
+                     "time_limit": {"DURATION": 1}},
+                    {"category": "defense", "condition": [["BEING_HIT_BY", "PHYSICAL", "PYRO"]],
+                     "effect": {"FROZEN": "FALSE", "HURT": "+2"}, "effect_obj": "SELF",
+                     "time_limit": {"DURATION": 1}}], "FROZEN")
         elif {ElementType.ELECTRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.ELECTRO)
@@ -740,17 +767,26 @@ class Game:
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.PYRO)
             effect.append({"DENDRO": "+1", "PYRO": "+1", "reaction": "BURNING"})
-            self.handle_summon(self.get_now_player(), {"Burning Flame": 1})
+            if type_ == "oppose":
+                self.handle_summon(self.get_now_player(), {"Burning Flame": 1})
+            else:
+                self.handle_summon(self.get_oppose(), {"Burning Flame": 1})
         elif {ElementType.DENDRO, ElementType.HYDRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.HYDRO)
             effect.append({"DENDRO": "+1", "HYDRO": "+1", "reaction": "BLOOM"})
-            self.handle_state(self.get_now_player().get_active_character_obj(), {"Dendro Core": 1})
+            if type_ == "oppose":
+                self.handle_state(self.get_now_player().get_active_character_obj(), {"Dendro Core": 1})
+            else:
+                self.handle_state(self.get_oppose().get_active_character_obj(), {"Dendro Core": 1})
         elif {ElementType.DENDRO, ElementType.ELECTRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.ELECTRO)
             effect.append({"DENDRO": "+1", "ELECTRO": "+1", "reaction": "CATALYZE"})
-            self.handle_state(self.get_now_player().get_active_character_obj(), {"Catalyzing Field": 2})
+            if type_ == "oppose":
+                self.handle_state(self.get_now_player().get_active_character_obj(), {"Catalyzing Field": 2})
+            else:
+                self.handle_state(self.get_oppose().get_active_character_obj(), {"Catalyzing Field": 2})
         elif ElementType.ANEMO in applied_element:
             applied_element.remove(ElementType.ANEMO)
             elements = list(applied_element)
@@ -765,8 +801,8 @@ class Game:
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    effect.append({"GEO": "+1", "add_modify": [{"category": "defense", "condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USE_UP": 1}, "stack": 2 ,"repeated": "True"}],
-                                   "reaction": "CRYSTALLIZE", "crystallize_element": element.name})
+                    effect.append({"GEO": "+1", "reaction": "CRYSTALLIZE", "crystallize_element": element.name})
+                    add_modify(self, trigger_obj, [{"category": "shield", "condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USE_UP": 1}, "stack": 2 ,"repeated": "True"}], "CRYSTALLIZE")
                     break
         trigger_obj.application = list(applied_element)
         return effect

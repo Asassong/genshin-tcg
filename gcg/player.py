@@ -20,7 +20,7 @@ from character import Character
 from summon import Summon, get_summon_usage
 from dice import Dice
 from enums import ElementType
-from utils import update_or_append_dict
+from utils import update_or_append_dict, DuplicateDict
 from typing import Optional
 
 
@@ -32,14 +32,14 @@ class Player:
         self.max_hand_card = 10
         self.dice_num = 8
         self.summons: list[Summon] = []
-        self.supports = []
+        self.supports: list[Card] = []
         self.characters: list[Character] = []
         self.dices: list[Dice] = []
         self.cards: list[Card] = []
         self.hand_cards: list[Card] = []
         self.current_character = None
         self.round_has_end = True
-        self.team_modifier = []
+        self.team_modifier = DuplicateDict()
         self.max_dice = 16
 
     def draw(self, num):
@@ -84,10 +84,17 @@ class Player:
         return self.characters
 
     def choose_character(self, character):
-        if not self.characters[character].alive:
+        if self.check_character_alive(character):
+            self.current_character = character
+            return True
+        else:
             return False
-        self.current_character = character
-        return True
+
+    def check_character_alive(self, index):
+        if self.characters[index].alive:
+            return True
+        else:
+            return False
 
     def get_active_character_obj(self) -> Optional[Character]:
         if self.current_character is not None:
@@ -193,10 +200,10 @@ class Player:
     def check_cost(self, cost):
         active_obj = self.get_active_character_obj()
         active_energy = active_obj.energy
-        active_element = active_obj.element
+        active_element = active_obj.element.name
         team_element = []
         for character in self.characters:
-            team_element.append(character.element)
+            team_element.append(character.element.name)
         team_element = list(set(team_element))
         count_dice = {}
         dice_type = []
@@ -400,7 +407,7 @@ class Player:
     def get_summon_name(self):
         summon_name_list = []
         for summon in self.summons:
-            summon_name_list.append(summon.name)
+            summon_name_list.append(summon.get_name())
         return summon_name_list
 
     def trigger_summon(self, summon: Summon, consume_usage):

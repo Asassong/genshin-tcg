@@ -1,4 +1,4 @@
-# Genius Invokation TCG, write by python.
+# Genius Invokation TCG, write in python.
 # Copyright (C) 2023 Asassong
 #
 # This program is free software: you can redistribute it and/or modify
@@ -14,26 +14,38 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from utils import read_json
+from utils import read_json, DuplicateDict
 
 
 class Card:
     def __init__(self, name_):
-        self.name = name_
+        self._name = name_
         card_info = card_dict[name_]
-        self.cost = card_info["cost"]
+        self._cost = card_info["cost"]
         self.tag = card_info["tag"]
         self.effect_obj = card_info["effect_obj"]
         self.combat_limit = {}
-        if "combat_limit" in card_dict[name_]:
-            self.combat_limit = card_dict[name_]["combat_limit"]
-        self.modify = card_dict[name_]["modify"]
-
+        if "combat_limit" in card_info:
+            self.combat_limit = card_info["combat_limit"]
+        self.modifies = DuplicateDict()
+        if "modify" in card_info:
+            self.init_modify(card_info["modify"])
+        self.use_skill = ""
+        if "use_skill" in card_info:
+            self.use_skill = card_info["use_skill"]
 
     def get_name(self):
-        return self.name
+        return self._name
 
     def get_cost(self):
-        return self.cost
+        return self._cost
+
+    def init_modify(self, modifies):
+        name = self.get_name()
+        for index, modify in enumerate(modifies):
+            self.modifies.update({name + "_" + str(index): modify})
+
+
+
 
 card_dict = read_json("card.json")

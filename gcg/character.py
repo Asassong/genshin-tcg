@@ -15,7 +15,7 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 from enums import ElementType, Nation, WeaponType
-from utils import read_json
+from utils import read_json, DuplicateDict
 
 
 class Character:
@@ -34,7 +34,7 @@ class Character:
             self.counter = {}
         self.alive = True
         self.energy = 0
-        self.modifies = []
+        self.modifies = DuplicateDict()
         self.application: list[ElementType] = []  # 元素附着
         self.weapon_infusion: ElementType = ElementType.NONE  # 元素附魔
         self.equipment = {"weapon": None, "reliquary": None, "talent": None}  # 武器, 圣遗物, 天赋
