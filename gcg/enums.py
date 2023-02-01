@@ -94,13 +94,12 @@ class CardType(Enum):
 
 
 class TimeLimit(Enum):
-    INFINITY = 1 # 永久存在
+    INFINITE = 1 # 永久存在
     IMMEDIATE = 2 # 按顺序立即生效
     ROUND = 3 # 永久存在，但每回合有生效次数存在
     USAGE = 4 # 一回合可生效多次， 但次数用尽即消失
     DURATION = 5 # 持续回合内可生效任意次， 但持续时间结束后消失
-    ATTACH = 6 # 当其他modify消失时消失
-    SHARE = 7 # 带有share的modify，在触发其他同名带有share的modify时，同时触发消耗
+
     ACT = 8 # 下次行动前
     USE_UP = 9 # 效果用完移除
     PREPARE = 10 # 准备
@@ -133,6 +132,7 @@ class EffectObj(Enum):
     SUPER = 24
     STATE = 25
     PLAYER = 26
+    ALL_BUT_ONE = 27
 
     COUNTER = 30 # 计数器
 
@@ -157,7 +157,7 @@ class ConditionType(Enum):
     HAVE_CARD = 13
     DONT_HAVE_CARD = 14
 
-    HAVE_STATE = 15
+    HAVE_STATE = 15  # list[HAVE_STATE, SELF|TEAM, state_name]
     HAVE_SUMMON = 16
 
     ONLY = 17 # 全队只有一个
@@ -179,9 +179,9 @@ class ConditionType(Enum):
     ATTACK = 28
     SKILL = 29 # 包括NORMAL_ATTACK ELEMENTAL_SKILL ELEMENTAL_BURST
 
-    REMOVE = 30 # TimeLimit为ATTACH时，当其他同名modify全部消失后，该modify移除。移除时效果。
+    REMOVE = 30 # 必须写在NEED_REMOVE后
     EQUIP = 31
-    PLAY_CARD = 32
+    PLAY_CARD = 32 # list类型, 卡牌名或TYPE_种类
 
     PYRO_RELATED = 33
     HYDRO_RELATED = 34
@@ -205,11 +205,15 @@ class ConditionType(Enum):
     GET_SKILL_NAME = 49
     GET_ELEMENT = 50 # [GET_ELEMENT, SUMMON|SWIRL|ACTIVE|HIT|ATTACK]
     SWIRL = 51 # 砂糖
+    ACTIVE_FIRST = 52 # 1费雷共鸣
     DIFFERENCE_FIRST = 53 # 纯水精灵
     GET_MOST_HURT = 54 # 望舒客栈， 默认后台
     COMPARE = 55 # 蒂玛乌斯
 
     SELF_HURT = 58 # DMG默认对象为对手， 此条件改为自身
+
+    OR = 60 # list, 或条件
+    NEED_REMOVE = 61 # list[NEED_REMOVE, [HAVE_STATE|HAVE_MODIFY, SELF|TEAM, state_name|modify_name]]
 
 
 class EffectType(Enum):
@@ -246,7 +250,7 @@ class EffectType(Enum):
     EQUIP_WEAPON = 46
     DRAW_CARD = 47
     ADD_CARD = 48  # 获得卡牌
-    SET_ENERGY = 49 # 改变能量
+    SET_ENERGY = 49 # 改变能量,可能需要细化
     ADD_MODIFY = 50 # dict或list[dict]类型
     REMOVE_CARD = 51
     REROLL = 52

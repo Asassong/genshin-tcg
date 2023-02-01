@@ -71,19 +71,22 @@ STAGE     END
 """
 from player import Player
 from character import Character
+from card import Card
+from summon import Summon
 from enums import EffectObj, TimeLimit, WeaponType, ElementType
 # from game import Game
-from typing import Optional
-from utils import update_or_append_dict, DuplicateDict
+from typing import Optional, Union
+from utils import DuplicateDict
 
 
 
-def add_modify(game, invoker: Character, modify: list, modify_name: str, force=False):
+def add_modify(game, invoker: Union[Character, Card, Summon], modify: list, modify_name: str, force=False):
     player = game.get_now_player()
     oppose = game.get_oppose()
     for index, each in enumerate(modify):
         if "IMMEDIATE" in each["time_limit"]:
-            invoke_modify(game, "none", invoker, modify={modify_name + "_" + str(index): each})
+            immediate_effect = invoke_modify(game, "none", invoker, modify={modify_name + "_" + str(index): each})
+            game.handle_extra_effect("none", immediate_effect)
         else:
             effect_obj = each["effect_obj"]
             if EffectObj[effect_obj] == EffectObj.SELF:
@@ -144,23 +147,23 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
         oppose_active = oppose.get_active_character_obj()
         for modify_name, modify_info in oppose_active.modifies.items():
             if invoke_relate(operation, modify_info):
-                all_related_modifies.update(modify_info)
+                all_related_modifies.update({modify_name: modify_info})
                 modify_belong[modify_name] = oppose_active.modifies
         for modify_name, modify_info in oppose.team_modifier.items():
             if invoke_relate(operation, modify_info):
-                all_related_modifies.update(modify_info)
+                all_related_modifies.update({modify_name: modify_info})
                 modify_belong[modify_name] = oppose.team_modifier
         oppose_summons = oppose.summons
         for summon in oppose_summons:
-            for modify_name, modify_info in summon.modifies:
+            for modify_name, modify_info in summon.modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = summon.modifies
         oppose_support = oppose.supports
         for support in oppose_support:
-            for modify_name, modify_info in support.modifies:
+            for modify_name, modify_info in support.modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = support.modifies
     elif operation == "none":
         pass  # 立即生效， 不调用任何其他modify
@@ -168,28 +171,28 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
         if invoker is not None:
             for modify_name, modify_info in invoker.modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = invoker.modifies
         if operation == "change_cost" or operation == "change":
             for modify_name, modify_info in kwargs["change_to"].modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = kwargs["change_to"].modifies
         for modify_name, modify_info in player.team_modifier.items():
             if invoke_relate(operation, modify_info):
-                all_related_modifies.update(modify_info)
+                all_related_modifies.update({modify_name: modify_info})
                 modify_belong[modify_name] = player.team_modifier
         summons = player.summons
         for summon in summons:
-            for modify_name, modify_info in summon.modifies:
+            for modify_name, modify_info in summon.modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = summon.modifies
         supports = player.supports
         for support in supports:
-            for modify_name, modify_info in support.modifies:
+            for modify_name, modify_info in support.modifies.items():
                 if invoke_relate(operation, modify_info):
-                    all_related_modifies.update(modify_info)
+                    all_related_modifies.update({modify_name: modify_info})
                     modify_belong[modify_name] = support.modifies
     """
     if operation == "draw": # game -> effect, draw阶段无角色
@@ -210,9 +213,12 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
     """
     need_remove_modifies = {}
     left_effect = {"extra_effect":[]}
+    if "left_effect" in kwargs:
+        left_effect.update(kwargs["left_effect"])
     special_effect = {}
     had_invoked_modify = []
     exclusive_modify = []
+    print(("related", all_related_modifies.to_list()))
     for modify_name, modify in all_related_modifies.items():
         if modify_name in had_invoked_modify:
             if "repeated" not in modify:
@@ -234,11 +240,6 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                 else:  # 无限不用处理， 立即生效在add_modify时处理, 持续回合在回合结束时处理
                     break
         real_invoker = invoker
-        s_modify_belong = modify_belong[modify_name]
-        if s_modify_belong == "to":
-            real_invoker = kwargs["change_to"]
-        elif s_modify_belong == "oppose_active":
-            real_invoker = oppose.get_active_character_obj()
         if "EXCLUSIVE" in special:
             super_modify_name = modify_name.rsplit("_", 1)[0]
             if super_modify_name in exclusive_modify:
@@ -344,15 +345,15 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                                             effect_value = effect_value.format(NUMBER=each_special["NUMBER"])
                                             break
                             if "damage" in kwargs:
-                                if kwargs["damage"].startswith("*") or kwargs["damage"].startswith("/"):
-                                    special_effect["damage"] = kwargs["damage"]
+                                if effect_value.startswith("*") or effect_value.startswith("/"):
+                                    special_effect["damage"] = effect_value
                                 else:
                                     kwargs["damage"] += eval(effect_value)
                                 consume |= True
                         elif effect_type == "HURT":
                             if "hurt" in kwargs:
-                                if kwargs["hurt"].startswith("*") or kwargs["hurt"].startswith("/"):
-                                    special_effect["hurt"] = kwargs["hurt"]
+                                if effect_value.startswith("*") or effect_value.startswith("/"):
+                                    special_effect["hurt"] = effect_value
                                     consume |= True
                                 else:
                                     if kwargs["hurt"] > 0:
@@ -457,8 +458,17 @@ def invoke_relate(operation, modify):
                 return True
     return False
 
-def remove_modify(obj: DuplicateDict, modify_name: str):
-    obj.pop(modify_name)
+def remove_modify(obj: DuplicateDict, modify_name: str, name_level="special"):
+    if name_level == "special":
+        obj.pop(modify_name)
+    elif name_level == "main":
+        name_list = []
+        for each_name, _ in obj.items():
+            main_name, other = each_name.split("_", 1)
+            if modify_name == main_name:
+                name_list.append(each_name)
+        for need_remove in name_list:
+            obj.pop(need_remove)
 
 def check_condition(condition, game, **kwargs):
     special = []

@@ -20,19 +20,17 @@ from utils import read_json, DuplicateDict
 class Card:
     def __init__(self, name_):
         self._name = name_
-        card_info = card_dict[name_]
-        self._cost = card_info["cost"]
-        self.tag = card_info["tag"]
-        self.effect_obj = card_info["effect_obj"]
+        self.card_info = card_dict[name_]
+        self._cost = self.card_info["cost"]
+        self.tag = self.card_info["tag"]
+        self.effect_obj = self.card_info["effect_obj"]
         self.combat_limit = {}
-        if "combat_limit" in card_info:
-            self.combat_limit = card_info["combat_limit"]
+        if "combat_limit" in self.card_info:
+            self.combat_limit = self.card_info["combat_limit"]
         self.modifies = DuplicateDict()
-        if "modify" in card_info:
-            self.init_modify(card_info["modify"])
         self.use_skill = ""
-        if "use_skill" in card_info:
-            self.use_skill = card_info["use_skill"]
+        if "use_skill" in self.card_info:
+            self.use_skill = self.card_info["use_skill"]
 
     def get_name(self):
         return self._name
@@ -40,10 +38,10 @@ class Card:
     def get_cost(self):
         return self._cost
 
-    def init_modify(self, modifies):
+    def init_modify(self):
+        modifies = self.card_info["modify"]
         name = self.get_name()
-        for index, modify in enumerate(modifies):
-            self.modifies.update({name + "_" + str(index): modify})
+        return modifies, name
 
 
 

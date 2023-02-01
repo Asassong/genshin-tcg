@@ -14,30 +14,31 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enums import ElementType, Nation, WeaponType
+from enums import ElementType, Nation
 from utils import read_json, DuplicateDict
 
 
 class Character:
     def __init__(self, character_name):
-        self._hp = character_info[character_name]["hp"]
-        self.max_hp = character_info[character_name]["hp"]
-        self.max_energy = character_info[character_name]["energy"]
+        character_detail = character_info[character_name]
+        self._hp = character_detail["hp"]
+        self.max_hp = character_detail["hp"]
+        self.max_energy = character_detail["energy"]
         self.name = character_name
-        self.skills: dict = character_info[character_name]["skills"]
-        self.element = ElementType[character_info[character_name]["element_type"].upper()]
-        self.nation = [Nation[i] for i in character_info[character_name]["nation"] if i]
-        self.weapon = WeaponType[character_info[character_name]["weapon"].upper()]
-        if "counter" in character_info[character_name]:
-            self.counter = {i: 0 for i in character_info[character_name]["counter"]}
+        self.skills: dict = character_detail["skills"]
+        self.element = ElementType[character_detail["element_type"].upper()]
+        self.nation = [Nation[i] for i in character_detail["nation"] if i]
+        self.weapon = character_detail["weapon"]
+        if "counter" in character_detail:
+            self.counter = {i: 0 for i in character_detail["counter"]}
         else:
             self.counter = {}
         self.alive = True
         self.energy = 0
         self.modifies = DuplicateDict()
         self.application: list[ElementType] = []  # 元素附着
-        self.weapon_infusion: ElementType = ElementType.NONE  # 元素附魔
-        self.equipment = {"weapon": None, "reliquary": None, "talent": None}  # 武器, 圣遗物, 天赋
+        self.equipment = {"weapon": None, "artifact": None, "talent": None}  # 武器, 圣遗物, 天赋
+        self._saturation = 0
 
     def change_hp(self, value):
         self._hp = min(self._hp + value, self.max_hp)
@@ -60,10 +61,9 @@ class Character:
             detail += "%s:血量%s 能量%s/%s" % (self.name, self._hp, self.energy, self.max_energy)
             # detail += "技能 " + " ".join(list(self.skills.keys())) + " "
             detail += "附着" + self.application[0].name + " " if self.application else ""
-            detail += "附魔" + self.weapon_infusion.name + " " if self.weapon_infusion else ""
             for key, value in self.equipment.items():
                 if value is not None:
-                    detail += "%s %s " % (key, value)
+                    detail += " %s: %s," % (key, value)
             detail += "\n"
             return detail
         else:
@@ -91,6 +91,15 @@ class Character:
 
     def change_energy(self, value):
         self.energy += value
+
+    def get_saturation(self):
+        return self._saturation
+
+    def change_saturation(self, value):
+        self._saturation += eval(value)
+
+    def cleat_saturation(self):
+        self._saturation = 0
 
 
 character_info = read_json("character.json")

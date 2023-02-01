@@ -41,6 +41,7 @@ class Player:
         self.round_has_end = True
         self.team_modifier = DuplicateDict()
         self.max_dice = 16
+        self.max_character_saturation = 1
 
     def draw(self, num):
         if len(self.cards) < num:
@@ -431,16 +432,19 @@ class Player:
     def get_card_obj(self, index):
         return self.hand_cards[index]
 
-    def add_support(self, card_name):
+    def add_support(self, card: Card):
         if len(self.supports) >= self.max_support:
             yield "remove"
-        self.supports.append(card_name)
+        self.supports.append(card)
 
     def remove_support(self, support_index):
         self.supports.pop(support_index)
 
     def get_support_name(self):
-        return self.supports
+        name_list = []
+        for support in self.supports:
+            name_list.append(support.get_name())
+        return name_list
 
     def get_character_nation(self):
         nation_list = []

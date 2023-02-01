@@ -20,7 +20,7 @@ from character import Character
 from enums import ElementType, PlayerAction, GameStage, TimeLimit, EffectObj
 from utils import read_json, pre_check
 from typing import Union
-from modify_manager import add_modify, invoke_modify
+from modify_manager import add_modify, invoke_modify, remove_modify
 
 
 class Game:
@@ -175,6 +175,9 @@ class Game:
         self.now_player = self.first_player
         for _ in range(len(self.players)):
             player = self.players[self.now_player]
+            # TODO 调用summon effect和summon modify应该是一起的， 现在为先调用所有modify再调用effect
+            end_stage_effect = invoke_modify(self, "end", player.get_active_character_obj(), player)
+            self.handle_extra_effect("end", end_stage_effect)
             for summon in player.summons.copy():
                 for effect, value in player.trigger_summon(summon, 1):
                     if effect == "damage":
@@ -182,7 +185,6 @@ class Game:
             if self.stage == GameStage.GAME_END:
                 break
             player.dices.clear()
-            effect = invoke_modify(self, "draw", None)
             player.draw(2)
             self.now_player = (self.now_player + 1) % len(self.players)
 
@@ -222,7 +224,7 @@ class Game:
         hand = player.get_hand()
         card_info = []
         for card in hand:
-            card_info.append(card.name)
+            card_info.append(card.get_name())
         return card_info
 
     @staticmethod
@@ -548,9 +550,9 @@ class Game:
         index = self.ask_player_choose_card(player)
         card = player.get_card_obj(index)
         effect_obj = card.effect_obj
-        card_cost = card.get_cost()
+        card_cost = card.get_cost().copy()
         state = player.check_cost(card_cost)
-        if state:
+        if state or state == {}:
             obj = None
             if effect_obj == "select":
                 char_index = self.ask_player_choose_character(player)
@@ -574,6 +576,26 @@ class Game:
                 pass
             if card.combat_limit:
                 pass
+            tag = card.tag
+            if "Location" in tag or "Companion" in tag or "Item" in tag:
+                for add_state in player.add_support(card):
+                    if add_state == "remove":
+                        index = self.ask_player_remove_support(player)
+                        player.remove_support(index)
+            elif "Food" in tag:
+                if isinstance(obj, Character):
+                    if obj.get_saturation() < player.max_character_saturation:
+                        obj.change_saturation("+1")
+                    else:
+                        return False
+                else:
+                    return False
+            elif "Weapon" in tag:
+                if isinstance(obj, Character):
+                    if obj.weapon not in tag:
+                        return False
+                else:
+                    return False
             if card.use_skill:
                 cost_state = self.skill_cost(card_cost)
             else:
@@ -581,15 +603,18 @@ class Game:
             if not cost_state:
                 return False
             player.remove_hand_card(index)
-            add_modify(self, obj, card.modify, card.name)
+            modifies, modify_name = card.init_modify()
+            if "Weapon" in tag or "Artifact" in tag or "Talent" in tag:
+                if isinstance(obj, Character):
+                    equip = list(set(tag) & {"Weapon", "Artifact", "Talent"})[0].lower()
+                    if obj.equipment[equip] is not None:
+                        remove_modify(obj.modifies, obj.equipment[equip], "main")
+                    obj.equipment[equip] = card.get_name()
+                    add_modify(self, obj, modifies, modify_name)
+            else:
+                add_modify(self, card, modifies, modify_name)
             if card.use_skill:
                 self.handle_skill(self.get_now_player().get_active_character_obj(), card.use_skill)
-            tag = card.tag
-            if "Location" in tag or "Companion" in tag or "Item" in tag:
-                for add_state in player.add_support(card.name):
-                    if add_state == "remove":
-                        index = self.ask_player_remove_support(player)
-                        player.remove_support(index)
         else:
             print("费用不足")
             return False
@@ -598,7 +623,7 @@ class Game:
 
     def handle_skill(self, invoker, skill_name):
         skill_detail = invoker.get_skill_detail(skill_name)
-        skill_cost = skill_detail["cost"]
+        skill_cost = skill_detail["cost"].copy()
         skill_type = skill_detail["type"]
         if "Normal Attack" in skill_type or "Elemental Skill" in skill_type:
             add_energy = 1
@@ -607,20 +632,23 @@ class Game:
         use_skill_effect = invoke_modify(self, "use_skill", invoker, skill_name=skill_name, skill_type=skill_type, cost=skill_cost, add_energy=add_energy)
         if "add_energy" in use_skill_effect:
             invoker.change_energy(use_skill_effect["add_energy"])
+            use_skill_effect.pop("add_energy")
         else:
             invoker.change_energy(add_energy)
         if "cost" in use_skill_effect:
             real_cost = use_skill_effect["cost"]
             # TODO 万一不用技能了，modify就白调了
             cost_state = self.skill_cost(real_cost)
+            use_skill_effect.pop("cost")
         else:
             cost_state = self.skill_cost(skill_cost)
         if not cost_state:
             return False
+        left_effect = self.handle_extra_effect("use_skill", use_skill_effect)
         if "modify" in skill_detail:
             add_modify(self, invoker, skill_detail["modify"], skill_name)
         if "damage" in skill_detail:
-            self.handle_damage(invoker, "team", skill_detail["damage"], skill_type=skill_type, skill_name=skill_name)
+            self.handle_damage(invoker, "team", skill_detail["damage"], skill_type=skill_type, skill_name=skill_name, left_effect=left_effect)
         if "create" in skill_detail:
             self.handle_state(invoker, skill_detail["create"])
         if "summon" in skill_detail:
@@ -648,10 +676,12 @@ class Game:
                 attack_effect = invoke_modify(self, "attack", attacker, **kwargs, reaction=reaction, damage=init_damage, element=element_type)
                 damage = attack_effect["damage"]
                 attack_effect.pop("damage")
+                self.handle_extra_effect("attack", attack_effect)
                 attackee_effect = invoke_modify(self, "defense", oppose_active, **kwargs, reaction=reaction, hurt=damage,
                                               element=element_type)
                 hurt = attackee_effect["hurt"]
                 attackee_effect.pop("hurt")
+                self.handle_extra_effect("defense", attackee_effect)
                 shield_effect = invoke_modify(self, "shield", oppose_active, **kwargs, hurt=hurt)
                 hurt = shield_effect["hurt"]
                 oppose_state = oppose_active.change_hp(-hurt)
@@ -660,16 +690,21 @@ class Game:
             elif element_type == "PHYSICAL":
                 infusion_effect = invoke_modify(self, "infusion", attacker, **kwargs)
                 if "infusion" in infusion_effect:
-                    self.handle_damage(attacker, attackee, {infusion_effect["infusion"]: init_damage}, **kwargs)
+                    infusion = infusion_effect["infusion"]
+                    infusion_effect.pop("infusion")
+                    left_effect = self.handle_extra_effect("infusion", infusion_effect)
+                    self.handle_damage(attacker, attackee, {infusion: init_damage}, **kwargs, left_effect=left_effect)
                 else:
                     attack_effect = invoke_modify(self, "attack", attacker, **kwargs, reaction=None,
                                                   damage=init_damage, element=element_type)
                     damage = attack_effect["damage"]
                     attack_effect.pop("damage")
+                    self.handle_extra_effect("attack", attack_effect)
                     attackee_effect = invoke_modify(self, "defense", oppose_active, **kwargs, reaction=None,
                                                     hurt=damage, element=element_type)
                     hurt = attackee_effect["hurt"]
                     attackee_effect.pop("hurt")
+                    self.handle_extra_effect("defense", attackee_effect)
                     shield_effect = invoke_modify(self, "shield", oppose_active, **kwargs, hurt=hurt)
                     hurt = shield_effect["hurt"]
                     oppose_state = oppose_active.change_hp(-hurt)
@@ -717,6 +752,11 @@ class Game:
                     if add_state == "remove":
                         index = self.ask_player_remove_summon(player)
                         player.remove_summon(index)
+                summon_obj = player.summons[-1]
+                summon_modify = summon_obj.init_modify()
+                if summon_modify is not None:
+                    modifies, summon = summon_modify
+                    add_modify(self, summon_obj, modifies, summon)
 
     def handle_element_reaction(self, trigger_obj: Character, element, type_="oppose"):
         trigger_obj.application.append(ElementType[element])
@@ -810,9 +850,10 @@ class Game:
     def handle_extra_effect(self, operation, effect: dict):
         player = self.get_now_player()
         oppose = self.get_oppose()
+        left_effect = {}
         for effect_type, effect_value in effect.items():
             if effect_type == "extra_effect":
-                for each in effect_type:
+                for each in effect_value:
                     extra_effect, effect_obj = each
                     if effect_obj == "PLAYER":
                         if "DRAW_CARD" in extra_effect:
@@ -851,7 +892,7 @@ class Game:
                                 if change_from != change_to:
                                     change_action_effect = invoke_modify(self, "change", change_from,
                                                                          change_from=change_from,
-                                                                         change_to=change_to)
+                                                                         change_to=change_to, left_effect={"change_action": "fast"})
                             elif effect_obj == "ALL":
                                 change_from = player.get_active_character_obj()
                                 player.auto_change_active(extra_effect["CHANGE_CHARACTER"])
@@ -859,7 +900,7 @@ class Game:
                                 if change_from != change_to:
                                     change_action_effect = invoke_modify(self, "change", change_from,
                                                                          change_from=change_from,
-                                                                         change_to=change_to)
+                                                                         change_to=change_to, left_effect={"change_action": "fast"})
                         elif "HEAL" in extra_effect:
                             heal = extra_effect["HEAL"]
                             if effect_obj == "ACTIVE":
@@ -871,8 +912,14 @@ class Game:
                         elif "APPLICATION" in extra_effect:
                             element = extra_effect["APPLICATION"]
                             if effect_obj == "ACTIVE":
-                                self.handle_element_reaction(player.get_active_character_obj(), element)
-
+                                self.handle_element_reaction(player.get_active_character_obj(), element, "self")
+            elif effect_type == "CHANGE_ACTION":
+                if operation == "change":
+                    left_effect.update({effect_type: effect_value})
+            elif effect_type == "DMG":
+                if operation == "use_skill" or operation == "infusion":
+                    left_effect.update({effect_type: effect_value})
+        return left_effect
 
 
 if __name__ == '__main__':
