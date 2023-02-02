@@ -18,33 +18,35 @@ import random
 from player import Player
 from character import Character
 from enums import ElementType, PlayerAction, GameStage, TimeLimit, EffectObj
-from utils import read_json, pre_check
+from utils import read_json, pre_check, DuplicateDict
 from typing import Union
-from modify_manager import add_modify, invoke_modify, remove_modify
+from modify_manager import add_modify, invoke_modify, remove_modify, consume_modify_usage
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, mode):
+        self.config = read_json("config.json")
+        game_config = self.config["Game"][mode]
         self.round = 0
-        self.players: list[Player] = []
+        self.players: list[Player] = self.init_player(game_config["Player"], game_config["enable_deck"], game_config["enable_character"])
         self.first_player: int = -1
-        self.game_modifier = {}
-        self.init_card_num = 5
-        self.switch_hand_times = 1
-        self.switch_dice_times = 1
+        self.init_card_num = game_config["init_card_num"]
+        self.switch_hand_times = game_config["switch_hand_times"]
+        self.switch_dice_times = game_config["switch_dice_times"]
         self.stage = GameStage.NONE
         self.state_dict = read_json("state.json")
         self.now_player = None
-        self.max_round = 15
+        self.max_round = game_config["max_round"]
         self.dead_info: set = set()
 
+    @staticmethod
+    def init_player(player_list, card_pack, char_pack):
+        players = []
+        for player in player_list:
+            players.append(Player(player, card_pack, char_pack))
+        return players
+
     def start_game(self):
-        config = read_json("config.json")
-        for key, value in config["Player"].items():
-            self.players.append(Player())
-            self.players[-1].name = key
-            self.players[-1].init_card(value["card"])
-            self.players[-1].init_character(value["character"])
         self.stage = GameStage.GAME_START
         for player in self.players:
             player.draw(self.init_card_num)
@@ -128,6 +130,10 @@ class Game:
             now_player = self.players[self.now_player]
             if not now_player.round_has_end:
                 active = now_player.get_active_character_obj()
+                for modify_name, modify in active.modifies.copy().items():
+                    consume_state = consume_modify_usage(modify, "act")
+                    if consume_state == "remove":
+                        remove_modify(active.modifies, modify_name)
                 action_effect = invoke_modify(self, "action", active)
                 if "USE_SKILL" in action_effect:
                     self.handle_skill(active, action_effect["USE_SKILL"])
@@ -175,8 +181,7 @@ class Game:
         self.now_player = self.first_player
         for _ in range(len(self.players)):
             player = self.players[self.now_player]
-            # TODO 调用summon effect和summon modify应该是一起的， 现在为先调用所有modify再调用effect
-            end_stage_effect = invoke_modify(self, "end", player.get_active_character_obj(), player)
+            end_stage_effect = invoke_modify(self, "end_c", None, player)
             self.handle_extra_effect("end", end_stage_effect)
             for summon in player.summons.copy():
                 for effect, value in player.trigger_summon(summon, 1):
@@ -184,9 +189,13 @@ class Game:
                         self.handle_damage(summon, "team", value)
             if self.stage == GameStage.GAME_END:
                 break
+            end_stage_effect = invoke_modify(self, "end_s", player.get_active_character_obj(), player)
+            self.handle_extra_effect("end", end_stage_effect)
             player.dices.clear()
             player.draw(2)
+            player.clear_character_saturation()
             self.now_player = (self.now_player + 1) % len(self.players)
+        self.round_end_consume_modify()
 
     def get_now_player(self):
         return self.players[self.now_player]
@@ -450,6 +459,8 @@ class Game:
                 else:
                     print("输入格式错误")
                     return False
+        elif cost_state == {}:
+            pass
         else:
             print("费用不足")
             return False
@@ -725,6 +736,11 @@ class Game:
             for key, value in extra_attack:
                 for standby in oppose_other:
                     self.handle_damage(attacker, standby, {key: value})
+        extra_effect = invoke_modify(self, "extra", attacker, None)
+        if "extra_attack" in extra_effect:
+            for element, damage in extra_effect["extra_attack"]:
+                self.handle_damage(attacker, "team", {element: damage})
+
 
     def handle_oppose_dead(self, oppose: Player):
         end = True
@@ -893,6 +909,7 @@ class Game:
                                     change_action_effect = invoke_modify(self, "change", change_from,
                                                                          change_from=change_from,
                                                                          change_to=change_to, left_effect={"change_action": "fast"})
+                                    self.handle_extra_effect("change", change_action_effect)
                             elif effect_obj == "ALL":
                                 change_from = player.get_active_character_obj()
                                 player.auto_change_active(extra_effect["CHANGE_CHARACTER"])
@@ -901,6 +918,7 @@ class Game:
                                     change_action_effect = invoke_modify(self, "change", change_from,
                                                                          change_from=change_from,
                                                                          change_to=change_to, left_effect={"change_action": "fast"})
+                                    self.handle_extra_effect("change", change_action_effect)
                         elif "HEAL" in extra_effect:
                             heal = extra_effect["HEAL"]
                             if effect_obj == "ACTIVE":
@@ -921,12 +939,36 @@ class Game:
                     left_effect.update({effect_type: effect_value})
         return left_effect
 
+    def round_end_consume_modify(self):
+        for player in self.players:
+            for character in player.characters:
+                for modify_name, modify in character.modifies.copy().items():
+                    consume_state = consume_modify_usage(modify_name, "end")
+                    if consume_state == "remove":
+                        remove_modify(character.modifies, modify_name)
+            for modify_name, modify in player.team_modifier.copy().items():
+                consume_state = consume_modify_usage(modify_name, "end")
+                if consume_state == "remove":
+                    remove_modify(player.team_modifier, modify_name)
+            for summon in player.summons:
+                for modify_name, modify in summon.modifies.copy().items():
+                    consume_state = consume_modify_usage(modify_name, "end")
+                    if consume_state == "remove":
+                        remove_modify(summon.modifies, modify_name)
+            for support in player.supports:
+                for modify_name, modify in support.modifies.copy().items():
+                    consume_state = consume_modify_usage(modify_name, "end")
+                    if consume_state == "remove":
+                        remove_modify(support.modifies, modify_name)
+
+
 
 if __name__ == '__main__':
-    state = pre_check()
+    mode = "Game1"
+    state = pre_check(mode)
     if isinstance(state, list):
         error = " ".join(state)
         print("以下卡牌不合法：%s" % error)
     else:
-        game = Game()
+        game = Game(mode)
         game.start_game()

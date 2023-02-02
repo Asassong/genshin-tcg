@@ -167,6 +167,30 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                     modify_belong[modify_name] = support.modifies
     elif operation == "none":
         pass  # 立即生效， 不调用任何其他modify
+    elif operation == "end_c":
+        for character in player.characters:
+            if character.alive:
+                for modify_name, modify_info in character.modifies.items():
+                    if invoke_relate("end", modify_info):
+                        all_related_modifies.update({modify_name: modify_info})
+                        modify_belong[modify_name] = character.modifies
+        for modify_name, modify_info in player.team_modifier.items():
+            if invoke_relate("end", modify_info):
+                all_related_modifies.update({modify_name: modify_info})
+                modify_belong[modify_name] = player.team_modifier
+    elif operation == "end_s":
+        summons = player.summons
+        for summon in summons:
+            for modify_name, modify_info in summon.modifies.items():
+                if invoke_relate("end", modify_info):
+                    all_related_modifies.update({modify_name: modify_info})
+                    modify_belong[modify_name] = summon.modifies
+        supports = player.supports
+        for support in supports:
+            for modify_name, modify_info in support.modifies.items():
+                if invoke_relate("end", modify_info):
+                    all_related_modifies.update({modify_name: modify_info})
+                    modify_belong[modify_name] = support.modifies
     else:
         if invoker is not None:
             for modify_name, modify_info in invoker.modifies.items():
@@ -236,6 +260,10 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                 if TimeLimit[limit_type] == TimeLimit.ROUND:
                     left_usage = time_limit[limit_type][1]
                     if left_usage <= 0:
+                        satisfy_condition = False
+                elif TimeLimit[limit_type] == TimeLimit.PREPARE:
+                    prepare = time_limit[limit_type]
+                    if prepare[0] != prepare[1]:
                         satisfy_condition = False
                 else:  # 无限不用处理， 立即生效在add_modify时处理, 持续回合在回合结束时处理
                     break
@@ -379,6 +407,12 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                             else:
                                 add_modify(game, real_invoker, [effect_value], modify_name + "_inner")
                             consume |= True
+                        elif effect_type in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
+                                    "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
+                            attack_type = effect_type.replace("_DMG", "")
+                            if "extra_attack" not in left_effect:
+                                left_effect["extra_attack"] = DuplicateDict()
+                            left_effect["extra_attack"].update({attack_type: effect_value})
                         else:
                             left_effect["extra_effect"].append(({effect_type: effect_value}, effect_obj))
                             consume |= True
@@ -835,6 +869,8 @@ def check_condition(condition, game, **kwargs):
                     if each[1] == "SWIRL":
                         if "swirl_element" in kwargs:
                             special.append({"ELEMENT": kwargs["swirl_element"]})
+                        else:
+                            return False
                     elif each[1] == "ACTIVE":
                         element = game.get_now_player().get_active_character_obj().element
                         special.append({"ELEMENT": element})
@@ -844,15 +880,21 @@ def check_condition(condition, game, **kwargs):
                     else:
                         return False
                 elif each[0] == "EQUIP":
-                    if each[1] in kwargs["card_tag"]:
-                        continue
+                    if "card_tag" in kwargs:
+                        if each[1] in kwargs["card_tag"]:
+                            continue
+                        else:
+                            return False
                     else:
                         return False
                 elif each[0] == "PLAY_CARD":
                     if each[1].startswith("TYPE_"):
                         tag = each[1].replace("TYPE_", "")
-                        if tag in kwargs["card_tag"]:
-                            continue
+                        if "card_tag" in kwargs:
+                            if tag in kwargs["card_tag"]:
+                                continue
+                            else:
+                                return False
                         else:
                             return False
                 elif each[0] == "COMPARE":
@@ -921,6 +963,6 @@ def consume_modify_usage(modify, operation="use"):
         elif "PREPARE" in time_limit:
             prepare: list = time_limit["PREPARE"]
             prepare[0] += 1
-            if prepare[0] == prepare[1]:
-                return "ready"
+            if prepare[0] > prepare[1]:
+                return "remove"
     return None

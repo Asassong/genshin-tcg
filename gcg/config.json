@@ -1,9 +1,16 @@
 {
   "Game": {
-    "Player": ["player1", "player2"],
-    "init_card_num": 5,
-    "switch_hand_times": 1,
-    "switch_dice_times": 1
+    "Game1":{"Player": ["player1", "player2"],
+            "init_card_num": 5,
+            "switch_hand_times": 1,
+            "switch_dice_times": 1,
+            "max_round": 15,
+            "enable_character": ["standard"],
+            "enable_deck": ["standard"],
+            "skip_stage": [],
+            "banned_action": [],
+            "all_player_attr_set": {},
+            "special_player_set": {}}
   },
   "Player":{
     "player1": {
@@ -20,7 +27,8 @@
       "character_num": 3,
       "max_hand_card": 10,
       "dice_num": 8,
-      "max_dice": 16
+      "max_dice": 16,
+      "max_character_saturation": 1
     },
     "player2": {
       "character": ["Fischl", "Collei", "Keqing"],
@@ -37,7 +45,8 @@
       "character_num": 3,
       "max_hand_card": 10,
       "dice_num": 8,
-      "max_dice": 16
+      "max_dice": 16,
+      "max_character_saturation": 1
     }
   }
 }

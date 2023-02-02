@@ -1,4 +1,5 @@
 {
+"standard": {
     "Ganyu": {
         "element_type": "CRYO",
         "skills": {
@@ -192,8 +193,8 @@
                 "cost": {"PYRO": 3},
                 "damage": {"PYRO": 3},
                 "modify": [{"category": "use_skill", "condition":[], "effect":{"Searing Onslaught": "+1"}, "effect_obj":"COUNTER", "time_limit": {"INFINITE": 1}},
-                           {"category": "attack", "condition":[["CHECK", "COUNTER_Searing Onslaught_==3"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":{"ROUND": [1, 1]}},
-                           {"category": "end", "condition":["STAGE_ROUND_END"], "effect":{"Searing Onslaught": 0}, "effect_obj":"COUNTER", "time_limit": {"INFINITE": 1}}]},
+                    {"category": "attack", "condition":[["CHECK", "COUNTER_Searing Onslaught_==3"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":{"ROUND": [1, 1]}},
+                    {"category": "end", "condition":["STAGE_ROUND_END"], "effect":{"Searing Onslaught": 0}, "effect_obj":"COUNTER", "time_limit": {"INFINITE": 1}}]},
             "Dawn": {
                 "type": ["Elemental Burst"],
                 "cost": {"PYRO": 4, "ENERGY": 3},
@@ -277,11 +278,11 @@
                 "cost": {"PYRO": 3},
                 "damage": {"PYRO": 3},
                 "create": {"Explosive Spark": 1},
-            "Sparks 'n' Splash": {
-                "type": ["Elemental Burst"],
-                "cost": {"PYRO": 3, "ENERGY": 3},
-                "damage": {"PYRO": 3},
-                "create": {"Sparks 'n' Splash": 1}}}},
+                "Sparks 'n' Splash": {
+                    "type": ["Elemental Burst"],
+                    "cost": {"PYRO": 3, "ENERGY": 3},
+                    "damage": {"PYRO": 3},
+                    "create": {"Sparks 'n' Splash": 1}}}},
         "weapon": "Catalyst",
         "nation": ["Mondstadt"],
         "energy": 3,
@@ -337,8 +338,8 @@
                 "type": ["Elemental Skill"],
                 "cost": {"ELECTRO": 3},
                 "damage": {"ELECTRO": 3},
-                "modify": [{"category": "use_skill", "condition":[["HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"REMOVE_CARD": "Lightning Stiletto", "ADD_MODIFY": {"category": "combat", "condition":[], "effect":{"INFUSION": "ELECTRO"}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}}}, "effect_obj":["PLAYER", "SELF"], "time_limit":{"IMMEDIATE": 1}},
-                           {"category": "use_skill", "condition":[["DONT_HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"ADD_CARD": "Lightning Stiletto"}, "effect_obj":"PLAYER", "time_limit":{"IMMEDIATE": 1}}]},
+                "modify": [{"category": "use_skill", "condition":[["HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"REMOVE_CARD": "Lightning Stiletto", "ADD_MODIFY": {"category": "infusion", "condition":[], "effect":{"INFUSION": "ELECTRO"}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}}}, "effect_obj":["PLAYER", "SELF"], "time_limit":{"IMMEDIATE": 1}},
+                    {"category": "use_skill", "condition":[["DONT_HAVE_CARD", "Lightning Stiletto"], "EXCLUSIVE"], "effect":{"ADD_CARD": "Lightning Stiletto"}, "effect_obj":"PLAYER", "time_limit":{"IMMEDIATE": 1}}]},
             "Starward Sword": {
                 "type": ["Elemental Burst"],
                 "cost": {"ELECTRO": 4, "ENERGY": 3},
@@ -454,7 +455,7 @@
                 "type": ["Elemental Burst"],
                 "cost": {"GEO": 3, "ENERGY": 3} ,
                 "damage": {"GEO": 6} ,
-                "modify": [{"category": "attack", "condition":[["HAVE_STATE","Jade Screen"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":{"IMMEDIATE": 1}}]}},
+                "modify": [{"category": "attack", "condition":[["HAVE_STATE", "TEAM", "Jade Screen"]], "effect":{"DMG": "+2"}, "effect_obj":"SELF", "time_limit":{"IMMEDIATE": 1}}]}},
         "weapon": "Catalyst",
         "nation": ["Liyue"],
         "energy": 3,
@@ -640,4 +641,5 @@
         "nation": ["Monster"],
         "energy": 2,
         "hp": 10}
+}
 }
