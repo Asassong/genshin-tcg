@@ -675,15 +675,16 @@ class Game:
             oppose_active = attackee
         for element_type, init_damage in damage.items():
             if element_type in ElementType.__members__:
-                effects: list[dict] = self.handle_element_reaction(oppose_active, element_type)
-                reaction = None
-                for effect in effects:
-                    for key, value in effect.items():
-                        if key == element_type:
-                            init_damage += eval(effect[key])
-                        elif key in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
-                                    "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
-                            extra_attack.append({key.replace("_DMG", ""): value})
+                # TODO 也要传infusion
+                reaction_effect = self.handle_element_reaction(oppose_active, element_type)
+                effects = next(reaction_effect)
+                reaction = effects["reaction"]
+                for key, value in effects.items():
+                    if key == element_type:
+                        init_damage += eval(effects[key])
+                    elif key in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
+                                "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
+                        extra_attack.append({key.replace("_DMG", ""): value})
                 attack_effect = invoke_modify(self, "attack", attacker, **kwargs, reaction=reaction, damage=init_damage, element=element_type)
                 damage = attack_effect["damage"]
                 attack_effect.pop("damage")
@@ -698,6 +699,7 @@ class Game:
                 oppose_state = oppose_active.change_hp(-hurt)
                 if oppose_state == "die":
                     self.handle_oppose_dead(oppose)
+                next(reaction_effect)
             elif element_type == "PHYSICAL":
                 infusion_effect = invoke_modify(self, "infusion", attacker, **kwargs)
                 if "infusion" in infusion_effect:
@@ -740,6 +742,8 @@ class Game:
         if "extra_attack" in extra_effect:
             for element, damage in extra_effect["extra_attack"]:
                 self.handle_damage(attacker, "team", {element: damage})
+            extra_effect.pop("extra_attack")
+        self.handle_extra_effect("extra", extra_effect)
 
 
     def handle_oppose_dead(self, oppose: Player):
@@ -777,20 +781,19 @@ class Game:
     def handle_element_reaction(self, trigger_obj: Character, element, type_="oppose"):
         trigger_obj.application.append(ElementType[element])
         applied_element = set(trigger_obj.application)
-        effect = []
         # 反应顺序还需进一步测试
         if {ElementType.CRYO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.PYRO)
-            effect.append({"CRYO": "+2", "PYRO": "+2", "reaction": "MELT"})
+            yield {"CRYO": "+2", "PYRO": "+2", "reaction": "MELT"}
         elif {ElementType.HYDRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.PYRO)
             applied_element.remove(ElementType.HYDRO)
-            effect.append({"HYDRO": "+2", "PYRO": "+2", "reaction": "VAPORIZE"})
+            yield {"HYDRO": "+2", "PYRO": "+2", "reaction": "VAPORIZE"}
         elif {ElementType.ELECTRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.PYRO)
-            effect.append({"ELECTRO": "+2", "PYRO": "+2", "reaction": "OVERLOADED"})
+            yield {"ELECTRO": "+2", "PYRO": "+2", "reaction": "OVERLOADED"}
             if type_ == "oppose":
                 add_modify(self, trigger_obj, [{"category": "extra", "condition":["IS_ACTIVE"], "effect":{"CHANGE_CHARACTER": -1}, "effect_obj":"OPPOSE", "time_limit":{"IMMEDIATE": 1}}], "OVERLOADED")
             else:
@@ -800,7 +803,7 @@ class Game:
         elif {ElementType.HYDRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.HYDRO)
             applied_element.remove(ElementType.CRYO)
-            effect.append({"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN"})
+            yield {"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN"}
             if type_ == "oppose":
                 add_modify(self, trigger_obj, [{"category": "action", "condition":[], "effect":{"FROZEN": "TRUE"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}},
                                                {"category": "defense", "condition":[["BEING_HIT_BY", "PHYSICAL", "PYRO"]], "effect":{"FROZEN": "FALSE", "HURT": "+2"}, "effect_obj":"OPPOSE_SELF", "time_limit":{"DURATION": 1}}], "FROZEN")
@@ -814,15 +817,15 @@ class Game:
         elif {ElementType.ELECTRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.ELECTRO)
-            effect.append({"ELECTRO": "+1", "CRYO": "+1", "PIERCE_DMG": 1, "reaction": "SUPER_CONDUCT"})
+            yield {"ELECTRO": "+1", "CRYO": "+1", "PIERCE_DMG": 1, "reaction": "SUPER_CONDUCT"}
         elif {ElementType.ELECTRO, ElementType.HYDRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.HYDRO)
-            effect.append({"ELECTRO": "+1", "HYDRO": "+1", "PIERCE_DMG": 1, "reaction": "ELECTRO_CHARGE"})
+            yield {"ELECTRO": "+1", "HYDRO": "+1", "PIERCE_DMG": 1, "reaction": "ELECTRO_CHARGE"}
         elif {ElementType.DENDRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.PYRO)
-            effect.append({"DENDRO": "+1", "PYRO": "+1", "reaction": "BURNING"})
+            yield {"DENDRO": "+1", "PYRO": "+1", "reaction": "BURNING"}
             if type_ == "oppose":
                 self.handle_summon(self.get_now_player(), {"Burning Flame": 1})
             else:
@@ -830,7 +833,7 @@ class Game:
         elif {ElementType.DENDRO, ElementType.HYDRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.HYDRO)
-            effect.append({"DENDRO": "+1", "HYDRO": "+1", "reaction": "BLOOM"})
+            yield {"DENDRO": "+1", "HYDRO": "+1", "reaction": "BLOOM"}
             if type_ == "oppose":
                 self.handle_state(self.get_now_player().get_active_character_obj(), {"Dendro Core": 1})
             else:
@@ -838,7 +841,7 @@ class Game:
         elif {ElementType.DENDRO, ElementType.ELECTRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.ELECTRO)
-            effect.append({"DENDRO": "+1", "ELECTRO": "+1", "reaction": "CATALYZE"})
+            yield {"DENDRO": "+1", "ELECTRO": "+1", "reaction": "CATALYZE"}
             if type_ == "oppose":
                 self.handle_state(self.get_now_player().get_active_character_obj(), {"Catalyzing Field": 2})
             else:
@@ -849,7 +852,7 @@ class Game:
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    effect.append({element.name + "_DMG": 1, "reaction": "SWIRL", "swirl_element": element.name})
+                    yield {element.name + "_DMG": 1, "reaction": "SWIRL", "swirl_element": element.name}
                     break
         elif ElementType.GEO in applied_element:
             applied_element.remove(ElementType.GEO)
@@ -857,11 +860,13 @@ class Game:
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    effect.append({"GEO": "+1", "reaction": "CRYSTALLIZE", "crystallize_element": element.name})
+                    yield {"GEO": "+1", "reaction": "CRYSTALLIZE", "crystallize_element": element.name}
                     add_modify(self, trigger_obj, [{"category": "shield", "condition":[], "effect":{"SHIELD": 1}, "effect_obj":"ACTIVE", "time_limit":{"USE_UP": 1}, "stack": 2 ,"repeated": "True"}], "CRYSTALLIZE")
                     break
+        else:
+            yield {"reaction": None}
         trigger_obj.application = list(applied_element)
-        return effect
+        yield
 
     def handle_extra_effect(self, operation, effect: dict):
         player = self.get_now_player()
@@ -941,25 +946,26 @@ class Game:
 
     def round_end_consume_modify(self):
         for player in self.players:
+            need_remove_modifies = DuplicateDict()  # consume需要传原始modify，但循环时禁止改变原始modify， 故只能统一移除
             for character in player.characters:
                 for modify_name, modify in character.modifies.copy().items():
-                    consume_state = consume_modify_usage(modify_name, "end")
+                    consume_state = consume_modify_usage(modify, "end")
                     if consume_state == "remove":
-                        remove_modify(character.modifies, modify_name)
+                        need_remove_modifies.update({modify_name: character.modifies})
             for modify_name, modify in player.team_modifier.copy().items():
-                consume_state = consume_modify_usage(modify_name, "end")
+                consume_state = consume_modify_usage(modify, "end")
                 if consume_state == "remove":
-                    remove_modify(player.team_modifier, modify_name)
+                    need_remove_modifies.update({modify_name: player.team_modifier})
             for summon in player.summons:
                 for modify_name, modify in summon.modifies.copy().items():
-                    consume_state = consume_modify_usage(modify_name, "end")
+                    consume_state = consume_modify_usage(modify, "end")
                     if consume_state == "remove":
-                        remove_modify(summon.modifies, modify_name)
+                        need_remove_modifies.update({modify_name: summon.modifies})
             for support in player.supports:
                 for modify_name, modify in support.modifies.copy().items():
-                    consume_state = consume_modify_usage(modify_name, "end")
+                    consume_state = consume_modify_usage(modify, "end")
                     if consume_state == "remove":
-                        remove_modify(support.modifies, modify_name)
+                        need_remove_modifies.update({modify_name: support.modifies})
 
 
 

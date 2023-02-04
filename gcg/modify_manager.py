@@ -15,12 +15,12 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 """
-(GAME_START)->(INIT_DRAW)->START->||: ROLL->ACTION->USE_SKILL->?INFUSION?->ATTACK->DEFENSE->SHIELD->EXTRA->END  ->DRAW :||->(GAME_END)
-                         ->STAGE                  ->COST                 ->COMBAT->COMBAT                ->STAGE
-(GAME_START)->(INIT_DRAW)->START->||: ROLL        ->CHANGE_COST->CHANGE->END  ->DRAW :||->(GAME_END)
-                                                  ->COST
-(GAME_START)->(INIT_DRAW)->START->||: ROLL        ->CARD_COST->PLAY_CARD->END  ->DRAW :||->(GAME_END)
-                                                  ->COST
+                                                                                             |<-----------------------------------|
+(GAME_START)->(INIT_DRAW)->||: START/STAGE->ROLL->ACTION-> USE_SKILL/COST->INFUSION->ATTACK/COMBAT/ANY_ATTACK->DEFENSE/COMBAT->SHIELD->EXTRA_ATTACK->AFTER_ATTACK ->END/STAGE->DRAW :||->(GAME_END)
+                                                           USE_SKILL/COST->PIERCE/ANY_ATTACK->DEF_PIERCE->EXTRA_ATTACK->AFTER_ATTACK
+                                                           CHANGE_COST/COST->CHANGE->AFTER_CHANGE
+                                                           CARD_COST/COST->PLAY_CARD
+
 DRAW      DRAW_NUM
           DRAW_TIMES
 
@@ -41,20 +41,15 @@ SUPPORT   ADD_SUPPORT
 SUMMON    ADD_SUMMON
           REMOVE_SUMMON
 
-CHANGE    CHANGE_ACTION
-          CHANGE_TO
-          BE_CHANGED_AS_ACTIVE
-          CHANGE_COST
+CHANGE_COST
 
-COST      CHANGE_COST
-          SKILL_COST
-          CARD_COST
+CHANGE    CHANGE_ACTION
+
+ACTION    USE_SKILL
 
 USE_SKILL SKILL_COST
           ADD_ENERGY
           COUNTER
-
-ACTION    USE_SKILL
 
 INFUSION
 
@@ -63,10 +58,10 @@ COMBAT    ATTACK    DMG
 
 SHIELD
 
-EXTRA     HEAL
-          TRIGGER
-          CONSUME_SUMMON_USAGE
-          CREATE_DMG
+EXTRA_ATTACK CREATE_DMG
+
+AFTER_ATTACK HEAL
+
 STAGE     END
 """
 from player import Player
@@ -244,11 +239,12 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
     exclusive_modify = []
     print(("related", all_related_modifies.to_list()))
     for modify_name, modify in all_related_modifies.items():
+        # TODO 风起鹤归
         if modify_name in had_invoked_modify:
             if "repeated" not in modify:
                 continue
             else:
-                if not modify["repeated"]:
+                if modify["repeated"] == "False":
                     continue
         condition = modify["condition"]
         satisfy_condition = check_condition(condition, game, **kwargs, invoke=invoker)
@@ -326,13 +322,9 @@ def invoke_modify(game, operation: str, invoker: Optional[Character], player: Pl
                             if "change_action" not in left_effect:
                                 left_effect["change_action"] = "fast"
                                 consume |= True
-                        elif effect_type == "SET_ENERGY":
-                            if isinstance(effect_value, str):
-                                if "add_energy" in kwargs:
-                                    left_effect["add_energy"] = eval(kwargs["add_energy"])
-                                    consume |= True
-                            else:
-                                left_effect["set_energy"] = effect_value
+                        elif effect_type == "SKILL_ADD_ENERGY":
+                            if "add_energy" in kwargs:
+                                left_effect["add_energy"] = kwargs["add_energy"]
                                 consume |= True
                         elif effect_type in ["COST_ANY", "COST_PYRO", "COST_HYDRO", "COST_ELECTRO", "COST_CRYO", "COST_DENDRO", "COST_ANEMO", "COST_GEO", "COST_ALL", "COST_ELEMENT"]:
                             if "cost" in kwargs:
@@ -526,6 +518,7 @@ def check_condition(condition, game, **kwargs):
                 elif each == "CHANGE_TO_STANDBY" or each == "CHANGE_AVATAR":
                     if "change_from" in kwargs:
                         if kwargs["change_from"] == kwargs["invoke"]:
+                            print(kwargs["change_from"].name, kwargs["invoke"].name)
                             continue
                         else:
                             return False
@@ -922,6 +915,14 @@ def check_condition(condition, game, **kwargs):
                             continue
                         else:
                             return False
+                elif each[0] == "USE_SKILL":
+                    if "skill_name" in kwargs:
+                        if kwargs["skill_name"] == each[1]:
+                            continue
+                        else:
+                            return False
+                    else:
+                        return False
                 elif each[0] == "OR":
                     satisfy = False
                     for or_condition in each[1:]:

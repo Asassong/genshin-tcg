@@ -159,8 +159,7 @@ class ConditionType(Enum):
 
     HAVE_STATE = 15  # list[HAVE_STATE, SELF|TEAM, state_name]
     HAVE_SUMMON = 16
-
-    ONLY = 17 # 全队只有一个
+    HAVE_MODIFY = 17
 
     IS_NOT_ACTIVE = 18
 
@@ -209,15 +208,17 @@ class ConditionType(Enum):
     DIFFERENCE_FIRST = 53 # 纯水精灵
     GET_MOST_HURT = 54 # 望舒客栈， 默认后台
     COMPARE = 55 # 蒂玛乌斯
-
-    SELF_HURT = 58 # DMG默认对象为对手， 此条件改为自身
+    IS_ALIVE = 56
 
     OR = 60 # list, 或条件
     NEED_REMOVE = 61 # list[NEED_REMOVE, [HAVE_STATE|HAVE_MODIFY, SELF|TEAM, state_name|modify_name]]
+    TRY = 62
+    ONLY = 63  # 全队只有一个
+    GET_TRY = 64
 
 
 class EffectType(Enum):
-    HURT = 1  # 受到伤害，只有str
+    HURT = 1  # 受到伤害，str(+,-,*,/)表示+=，-=，*=，/=
     DMG = 2  # 改变伤害,str(+,-,*,/)表示+=，-=，*=，/=
 
     CRYO_DMG = 17  # 造成冰元素伤害，只有int
@@ -245,16 +246,15 @@ class EffectType(Enum):
     INFUSION = 40 # 附魔，str元素类型
     APPLICATION = 41 # 元素附着，str元素类型
 
-    REMOVE_ARTIFACT = 44
-    EQUIP_ARTIFACT = 45
-    EQUIP_WEAPON = 46
+    SKILL_ADD_ENERGY = 43 # int
+    CHANGE_ENERGY = 44 # int
+    SET_ENERGY = 45 # int
+
     DRAW_CARD = 47
     ADD_CARD = 48  # 获得卡牌
-    SET_ENERGY = 49 # 改变能量,可能需要细化
     ADD_MODIFY = 50 # dict或list[dict]类型
     REMOVE_CARD = 51
     REROLL = 52
-    REMOVE_WEAPON = 54
 
     TRIGGER = 55 # 使用召唤物技能，召唤物名称或TYPE_召唤物类型
     CONSUME_SUMMON_USAGE = 56 # 默认为1
@@ -278,6 +278,11 @@ class EffectType(Enum):
 
     ADD_STATE = 74
     ADD_SUMMON = 75
+
+    CHANGE_SKILL_DAMAGE = 80 # dict
+    CHANGE_SKILL_MODIFY = 81
+    CHANGE_STATE_MODIFY = 82
+    MODIFY_MODIFY = 83
 
     CHANGE_SUMMON_ELEMENT = 101 # 砂糖
     RANDOM = 102 # 纯水精灵
