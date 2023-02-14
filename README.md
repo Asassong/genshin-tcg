@@ -5,6 +5,8 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
+最近几天更新重构后的项目文档
+
 ## Roadmap
 
 * ~~v0.5 角色能造成伤害，元素反应能增加伤害，元素调和，结束回合，切换角色正常。但所有其他效果均无法触发~~
