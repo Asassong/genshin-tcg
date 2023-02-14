@@ -5,7 +5,7 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
-最近几天更新重构后的项目文档
+最近几天更新开发文档，准备重构
 
 ## Roadmap
 
