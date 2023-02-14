@@ -3,7 +3,7 @@
 
 尚未完成/half-finished
 
-最近几天尝试发个demo，可能不会更新。
+Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
 ## Roadmap
 
