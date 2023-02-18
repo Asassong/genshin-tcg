@@ -1,0 +1,407 @@
+{
+  "Ice Lotus": {
+  "modify": [{
+      "name": "Ice Lotus_0",
+      "trigger_time": "defense",
+      "condition": ["BEING_HIT"],
+      "effect": {"HURT": "-1"},
+      "effect_obj": "ACTIVE"}],
+  "store": "TEAM",
+  "time_limit": {"USAGE": 2},
+  "icon": "times_shield",
+  "count": "time"
+},
+  "Cat-Claw Shield": {
+  "modify": [{
+      "name": "Cat-Claw Shield_0",
+      "trigger_time": "shield",
+      "condition": [],
+      "effect": {"SHIELD": {"name": "Cat-Claw Shield_SHIELD",
+                            "shield": 1}},
+      "effect_obj": "ACTIVE"}],
+  "store": "TEAM",
+  "time_limit": {"IMMEDIATE": 1},
+  "icon": "",
+  "count": ""
+},
+  "Icicle": {
+  "modify": [{
+      "name": "Icicle_0",
+      "trigger_time": "after_change",
+      "condition": ["CHANGE_AVATAR"],
+      "effect": {"CRYO_DMG": 2},
+      "effect_obj": "OPPOSE"}],
+  "time_limit": {"USAGE": 3},
+  "store": "TEAM",
+  "icon": "state",
+  "count": "time"
+},
+  "Chonghua Frost Field": {
+  "modify": [{
+      "name": "Chonghua Frost Field_0",
+      "trigger_time": "infusion",
+      "condition": [{"logic": "check", "what": "weapon", "whose": "active", "operator": "equal", "condition": "melee"}],
+      "effect": {"INFUSION": {"name": "Chonghua Frost Field_INFUSION",
+                              "type": "CRYO"}},
+      "effect_obj": "ACTIVE"}],
+  "store": "TEAM",
+  "time_limit": {"DURATION": 2},
+  "icon": "infusion",
+  "count": "time"
+},
+  "Rain Sword": {
+  "modify": [{
+      "name": "Rain Sword_0",
+      "trigger_time": "defense",
+      "condition": ["BEING_HIT", {"logic": "check", "what": "hurt", "whose": "all", "operator": "large", "condition": 0}],
+      "effect": {"HURT": "-1"},
+      "effect_obj": "ACTIVE"}],
+  "store": "TEAM",
+  "time_limit": {"USAGE": 2},
+  "icon": "times_shield",
+  "count": "time"
+},
+  "Rainbow Bladework": {
+  "modify": [{
+      "name": "Rainbow Bladework_0",
+      "trigger_time": "extra_attack",
+      "condition": ["NORMAL_ATTACK"],
+      "effect": {"HYDRO_DMG": 2},
+      "effect_obj": "OPPOSE"}],
+  "store": "TEAM",
+  "time_limit": {"USAGE": 3},
+  "icon": "state",
+  "count": "time"
+},
+  "Illusory Bubble": {
+  "modify": [{
+      "name": "Illusory Bubble_0",
+      "trigger_time": "attack",
+      "condition": ["SKILL"],
+      "effect": {"DMG": "*2"},
+      "effect_obj": "ALL"}],
+  "store": "TEAM",
+  "time_limit": {"USAGE": 1},
+  "icon": "state",
+  "count": ""
+},
+  "Pyronado": {
+  "modify": [{
+      "name": "Pyronado_0",
+      "trigger_time": "extra_attack",
+      "condition": ["SKILL"],
+      "effect": {"PYRO_DMG": 2},
+      "effect_obj": "OPPOSE"}],
+  "store": "TEAM",
+  "time_limit": {"USAGE": 2},
+  "icon": "state",
+  "count": "time"
+},
+  "Inspiration Field": {
+  "modify": [{
+      "name": "Inspiration Field_0",
+      "trigger_time": "attack",
+      "condition": [{"logic": "check", "what": "hp", "whose": "active", "operator": "large_equal", "condition": 7}],
+      "effect": {"DMG": "+2"},
+      "effect_obj": "ACTIVE"},
+      {
+      "name": "Inspiration Field_1",
+      "trigger_time": "after_attack",
+      "condition": [{"logic": "check", "what": "hp", "whose": "active", "operator": "less_equal", "condition": 6}],
+      "effect": {"HEAL": 2},
+      "effect_obj": "ACTIVE"}],
+  "store": "TEAM",
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time"
+},
+  "Niwabi Enshou": {
+  "modify": [{
+      "name": "Niwabi Enshou_0",
+      "trigger_time": "after_using_skill",
+      "condition": ["NORMAL_ATTACK"],
+      "effect": {"INFUSION": {"name": "Niwabi Enshou_INFUSION",
+                              "type": "PYRO"}},
+      "effect_obj": "SELF"},
+      {
+      "name": "Niwabi Enshou_1",
+      "trigger_time": "attack",
+      "condition": ["NORMAL_ATTACK"],
+      "effect": {"DMG": "+1"},
+      "effect_obj": "SELF"}],
+  "store": "SELF",
+  "time_limit": {"USAGE": 2},
+  "icon": "state",
+  "count": "time"},
+  "Aurous Blaze": {
+  "modify": [{
+      "name": "Aurous Blaze_0",
+      "trigger_time": "extra_attack",
+      "condition": ["SKILL", {"logic": "check", "what": "name", "whose": "active", "operator": "not_equal", "condition": "Yoimiya"}],
+      "effect": {"PYRO_DMG": 1},
+      "effect_obj": "OPPOSE"}],
+  "store": "TEAM",
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time"
+},
+  "The Wolf Within": {
+  "modify": [{
+      "name": "The Wolf Within_0",
+      "trigger_time": "extra_attack",
+      "condition": [["NORMAL_ATTACK", "ELEMENTAL_SKILL"]],
+      "effect": {"ELECTRO_DMG": 2},
+      "effect_obj": "OPPOSE"}],
+  "store": "SELF",
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time"
+  },
+ "Pactsworn Pathclearer": {
+  "modify": [
+       {"name": "Pactsworn Pathclearer_0",
+        "trigger_time": "end",
+        "condition": ["STAGE_ROUND_END"],
+        "effect": {"Indwelling": "+1"},
+        "effect_obj": "COUNTER"},
+       {"name": "Pactsworn Pathclearer_1",
+        "trigger_time": "infusion",
+        "condition": [{"logic": "check", "what": "counter", "whose": "Indwelling", "operator": "large_equal", "condition": 2}],
+        "effect": {"INFUSION": "ELECTRO"},
+        "effect_obj": "SELF"},
+       {"name": "Pactsworn Pathclearer_2",
+        "trigger_time": "attack",
+        "condition": [{"logic": "check", "what": "counter", "whose": "Indwelling", "operator": "large_equal", "condition": 4}],
+        "effect": {"DMG": "+2"},
+        "effect_obj": "SELF"},
+       {"name": "Pactsworn Pathclearer_3",
+        "trigger_time": "any",
+        "condition": [{"logic": "check", "what": "counter", "whose": "Indwelling", "operator": "large_equal", "condition": 6}],
+        "effect": {"Indwelling": "-4"},
+        "effect_obj": "COUNTER"}],
+  "store": "SELF",
+  "time_limit": {"INFINITE": 1},
+  "icon": "state",
+  "count": "counter"
+ },
+ "Jade Screen": {
+  "modify": [{"name": "Jade Screen_0",
+              "trigger_time": "defense",
+              "condition": [{"logic": "check", "what": "hurt", "operator": "large_equal", "condition": 2}],
+              "effect": {"HURT": "-1"},
+              "effect_obj": "ACTIVE",
+              "time_limit": {"USAGE": 2}}],
+  "store": "TEAM",
+  "icon": "times_shield",
+  "count": "time"
+ },
+ "Full Plate": {
+  "condition": [{"logic": "have_shield", "whose": "team", "what": "Full Plate_SHIELD"}],
+  "modify": [{"name": "Full Plate_0",
+              "trigger_time": "after_attack",
+              "condition": [],
+              "effect": {"SHIELD": {"name": "Full Plate_SHIELD",
+                                    "shield": 2}},
+              "effect_obj": "ACTIVE",
+              "be_added": ["remove"]},
+             {"name": "Full Plate_1",
+              "trigger_time": "defense",
+              "condition": [{"logic": "check", "what": "element", "whose": "hurt", "operator": "equal", "condition": "PHYSICAL"}],
+              "effect": {"HURT": "/2"},
+              "effect_obj": "ACTIVE"}],
+  "time_limit": {"INFINITE": 1},
+  "store": "TEAM",
+  "icon": "",
+  "count": ""},
+ "Sweeping Time": {
+  "modify": [{"name": "Sweeping Time_0",
+              "trigger_time": "use_skill",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"COST_GEO": "-1"},
+              "effect_obj": "SELF",
+              "time_limit": {"ROUND": [1, 1]}},
+             {"name": "Sweeping Time_1",
+              "trigger_time": "after_using_skill",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"INFUSION": "GEO"},
+              "effect_obj": "SELF"},
+             {"name": "Sweeping Time_2",
+              "trigger_time": "attack",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"DMG": "+2"},
+              "effect_obj": "OPPOSE"}],
+  "store": "SELF",
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time"
+ },
+ "Stealth": {
+  "modify": [{"name": "Stealth_0",
+              "trigger_time": "attack",
+              "condition": [],
+              "effect": {"DMG": "+1"},
+              "effect_obj": "SELF"},
+             {"name": "Stealth_1",
+              "trigger_time": "defense",
+              "condition": [],
+              "effect": {"HURT": "-1"},
+              "effect_obj": "SELF"}],
+  "store": "SELF",
+  "time_limit": {"USAGE": 2},
+  "icon": "state",
+  "count": "time"
+ },
+ "Stonehide": {
+  "modify": [{"name": "Stonehide_0",
+              "trigger_time": "defense",
+              "condition": [{"logic": "check", "what": "hurt", "operator": "large", "condition": 0}],
+              "effect": {"HURT": "-1"},
+              "effect_obj": "SELF"},
+             {"name": "Stonehide_1",
+              "trigger_time": "defense",
+              "condition": [{"logic": "check", "what": "element", "whose": "hurt", "operator": "equal", "condition": "GEO"}],
+              "effect": {"CONSUME_STATE_USAGE": {"Stonehide": 1}},
+              "effect_obj": "SELF"}],
+  "store": "SELF",
+  "time_limit": {"USAGE": 3},
+  "icon": "times_shield",
+  "count": "time"
+ },
+ "Stone Force": {
+  "condition": [{"logic": "have_state", "whose": "self", "what": "Stonehide"}],
+  "modify": [{
+              "name": "Stone Force_0",
+              "trigger_time": "attack",
+              "condition": [],
+              "effect": {"DMG": "+1"},
+              "effect_obj": "SELF",
+              "time_limit": {"ROUND": [1, 1]}},
+             {"name": "Stone Force_1",
+              "trigger_time": "after_using_skill",
+              "condition": [],
+              "effect": {"INFUSION": {"name": "Stone Force_INFUSION",
+                                      "type": "GEO"}},
+              "effect_obj": "SELF"}],
+ "store": "SELF",
+ "time_limit": {"INFINITE": 1},
+ "icon": "state",
+ "count": ""
+ },
+ "Radical Vitality": {
+  "special_const": {"__count": 3},
+  "modify": [{"name": "Radical Vitality_0",
+              "trigger_time": "attack",
+              "condition": ["ELEMENT_DMG", {"logic": "check", "what": "counter", "whose": "Radical Vitality", "operator": "less", "condition": "__count"}],
+              "effect": {"Radical Vitality": "+1"},
+              "effect_obj": "COUNTER",
+              "count": "counter"},
+             {"name": "Radical Vitality_1",
+              "trigger_time": "defense",
+              "condition": ["ELEMENT_HURT", {"logic": "check", "what": "counter", "whose": "Radical Vitality", "operator": "less", "condition": "__count"}],
+              "effect": {"Radical Vitality": "+1"},
+              "effect_obj": "COUNTER"},
+             {"name": "Radical Vitality_2",
+              "trigger_time": "end",
+              "condition": ["STAGE_ROUND_END", {"logic": "check", "what": "counter", "whose": "Radical Vitality", "operator": "equal", "condition": "__count"}],
+              "effect_list": {"SET_ENERGY": 0},
+              "effect_obj": "SELF"},
+             {"name": "Radical Vitality_3",
+              "trigger_time": "end",
+              "condition": ["STAGE_ROUND_END", {"logic": "check", "what": "counter", "whose": "Radical Vitality", "operator": "equal", "condition": "__count"}],
+              "effect_list": {"Radical Vitality": 0},
+              "effect_obj": "COUNTER"}],
+  "store": "SELF",
+  "time_limit": {"INFINITE": 1},
+  "icon": "state",
+  "count": "counter"
+ },
+ "Dendro Core": {
+  "modify": [{"name": "Dendro Core_0",
+    "trigger_time": "attack",
+    "condition": [[{"logic": "check", "what": "element", "whose": "attack", "operator": "equal", "condition": "PYRO"},
+                   {"logic": "check", "what": "element", "whose": "attack", "operator": "equal", "condition": "ELECTRO"}]],
+    "effect": {"DMG": "+2"},
+    "effect_obj": "ALL"}],
+  "time_limit": {"USAGE": 1},
+  "icon": "state",
+  "count": "time",
+  "store": "SELF"
+ },
+ "Catalyzing Field": {
+  "modify": [{"name": "Catalyzing Field_0",
+              "trigger_time": "attack",
+              "condition": [[{"logic": "check", "what": "element", "whose": "attack", "operator": "equal", "condition": "DENDRO"},
+                             {"logic": "check", "what": "element", "whose": "attack", "operator": "equal", "condition": "ELECTRO"}]],
+              "effect": {"DMG": "+1"},
+              "effect_obj": "ALL"}],
+  "time_limit": {"USAGE": 2},
+  "icon": "state",
+  "count": "time",
+  "store": "SELF"
+ },
+ "Explosive Spark": {
+  "modify": [{"name": "Explosive Spark_0",
+              "trigger_time": "use_skill",
+              "condition": [{"logic": "check", "what": "dice_num", "operator": "equal", "condition": "even"}, "NORMAL_ATTACK"],
+              "effect": {"COST_PYRO": "-1", "DMG": "+1"},
+              "effect_obj": "SELF"}],
+  "time_limit": {"USAGE": 1},
+  "icon": "state",
+  "count": "time",
+  "store": "SELF"
+ },
+ "Sparks 'n' Splash": {
+  "modify": [{"name": "Sparks 'n' Splash_0",
+              "trigger_time": "extra_attack",
+              "condition": ["SKILL"],
+              "effect": {"PYRO_DMG": 2},
+              "effect_obj": "SELF"}],
+  "time_limit": {"USAGE": 2},
+  "count": "time",
+  "icon": "state",
+  "store": "OPPOSE"
+ },
+ "Thunderbeast's Targe": {
+  "modify": [{"name": "Thunderbeast's Targe_0",
+              "trigger_time": "extra_attack",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"ELECTRO_DMG": 1},
+              "effect_obj": "OPPOSE"},
+             {"name": "Thunderbeast's Targe_1",
+              "trigger_time": "defense",
+              "condition": [{"logic": "check", "what": "hurt", "operator": "large_equal", "condition": 3}],
+              "effect": {"HURT": "-1"},
+              "effect_obj": "ALL"}],
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time",
+  "store": "TEAM"
+ },
+  "Seed of Skandha": {
+    "modify": [{"trigger_time": "attack", "condition":["ELEMENT_REACTION"], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 2, "ROUND": [1, 1]}}]
+  },
+  "Shrine of Maya": {
+    "modify": [{"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_PYRO"], "effect":{"ADD_MODIFY": {"trigger_time": "attack", "condition":[["USE_SKILL", "All Schemes to Know"]], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"PIERCE_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}}}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 2, "ROUND": [1, 1]}},
+               {"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_HYDRO"], "effect":{"CHANGE_STATE_MODIFY": {"Seed of Skandha": [{"trigger_time": "attack", "condition":["ELEMENT_REACTION"], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"USAGE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 3, "ROUND": [1, 1]}}]}}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}},
+               {"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_ELECTRO"], "effect":{"ADD_MODIFY": {"trigger_time": "attack", "condition":[["USE_SKILL", "All Schemes to Know"]], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"USAGE": 1}}}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"SELF", "time_limit":{"IMMEDIATE": 1}}]
+  },
+  "Grass Ring of Sanctification": {
+    "modify": [{"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"ELECTRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}},
+               {"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"HEAL": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}},
+               {"trigger_time": "start", "condition":["STAGE_ROUND_START"], "effect":{"ELECTRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}},
+               {"trigger_time": "start", "condition":["STAGE_ROUND_START"], "effect":{"HEAL": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}}]
+  },
+  "Pyro Scorpion": {
+    "modify": [{"trigger_time": "extra_attack", "condition":[["CHECK", "HP_SELF_<=6"]], "effect":{"PYRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"INFINITY": 1}}]
+  },
+  "Floral Ring": {
+    "modify": [{"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"DENDRO_DMG": 2}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 2}}]
+  },
+  "Dendro Spirit-Serpent": {
+    "modify": [{"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"DENDRO_DMG": 3}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}}]
+  },
+  "Desert Clearwater's state": {
+    "modify": [{"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"HYDRO_DMG": 2}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}},
+               {"trigger_time": "start", "condition":["STAGE_ROUND_START"], "effect":{"HYDRO_DMG": 2}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}}]
+  }
+}
