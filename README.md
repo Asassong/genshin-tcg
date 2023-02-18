@@ -47,4 +47,7 @@ Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411
 
 * v2.x 强化学习/Reinforcement learning
 
+## 致谢
+
+* ChatGPT
 
