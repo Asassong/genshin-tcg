@@ -1,8 +1,12 @@
 import socket
 from utils import read_json, pre_check
 import threading
-import multiprocessing
 from game import Game
+
+
+def start_game(clients, mode, client_deck):
+    gcg = Game(mode, clients, client_deck)
+    gcg.start_game()
 
 class Server:
     def __init__(self):
@@ -27,14 +31,15 @@ class Server:
             msg = eval(data.decode("utf-8"))
             if msg["message"] == "connect request":
                 nickname = msg["nickname"]
-                self.client_info[remote_addr] = (nickname, None)
+                self.client_info[remote_addr] = [nickname, None]
                 self.waiting_clients.append(remote_addr)
                 self.send(str({"message": "choose mode"}).encode("utf-8"), remote_addr)
             elif msg["message"] == "selected mode":
                 mode = msg["mode"]
+                self.client_info[remote_addr][1] = mode
                 self.send(str({"message": "send deck"}).encode("utf-8"), remote_addr)
                 self.mode_clients.setdefault(mode, []).append(remote_addr)
-            elif msg["message"] == "check_deck":
+            elif msg["message"] == "check deck":
                 character = msg["character"]
                 card = msg["card"]
                 mode = self.client_info[remote_addr][1]
@@ -43,6 +48,7 @@ class Server:
                     self.send(str({"message": "recheck deck", "invalid_card": check_state}).encode("utf-8"), remote_addr)
                 else:
                     self.valid_deck_client.update({remote_addr: (character, card)})
+                    self.whether_start_game(mode)
         except Exception as e:
             print("Error in handle_message:", e)
 
@@ -55,17 +61,12 @@ class Server:
                     valid_client.append(client)
                     client_deck.update({client: self.valid_deck_client[client]})
             if len(valid_client) >= self.config[mode]["client_num"]:
-                p = multiprocessing.Process(target=self.start_game, args=(valid_client, mode, client_deck))
-                p.start()
+                new_game_thread = threading.Thread(target=start_game, args=(valid_client, mode, client_deck))
+                new_game_thread.start()  # 居然不能临时拉个进程
                 for c in valid_client:
                     self.waiting_clients.remove(c)
                     self.mode_clients[mode].remove(c)
                     self.valid_deck_client.pop(c)
-
-    @staticmethod
-    def start_game(clients, mode, client_deck):
-        gcg = Game(mode, clients, client_deck)
-        gcg.start()
 
     def receive(self):
         while True:
