@@ -1,47 +1,31 @@
 # genshin-tcg
 原神七圣召唤/Genius Invokation TCG
 
-尚未完成/half-finished
+即将完成/Close to completion
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
-最近几天更新开发文档，准备重构
+## 已重构
+
+* 整局游戏用同一个种子生成的随机数序列
+
+* 记录玩家操作
+
+* 将多玩家同时进行的操作改为异步
+
+* 逻辑上部分支持多玩家(具体逻辑待设计）
 
 ## Roadmap
 
-* ~~v0.5 角色能造成伤害，元素反应能增加伤害，元素调和，结束回合，切换角色正常。但所有其他效果均无法触发~~
-
-* ~~v0.6 对modify条件进行校验~~
-
-* ~~v0.85 对部分modify效果进行处理~~
-
-* ~~v0.86 完善modify调用，完善元素反应，部分实现游戏结束判断及部分移除modify逻辑~~ 
-
-* ~~v0.88 完善modify调用，部分卡牌效果触发~~
-
-* **目前进度** v0.9 完善modify, 添加天赋卡modify
-
-* modify效果处理
-
-* modify移除
-
-* ~~攻击额外效果， 非对应阶段遗留effect处理~~
+* **目前进度** 重构中
 
 * 天赋卡
 
-* v0.95 所有效果正常触发，也就是各处的modify
-
-* ~~更改config加载方式~~
-
-* ~~游戏前对牌组进行检验~~， 战斗时限制条件检验
+ 战斗时限制条件检验
 
 * v1.0 程序逻辑运行如官服
 
-* 统一随机数种子
-
-* v1.1 精简和完善代码
-
-* v2.0 pyqt或其他制作GUI界面
+将服务端改为多进程多线程（现在为单进程多线程）
 
 * v2.1 卡牌编辑器，自定义牌局
 
