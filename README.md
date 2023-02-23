@@ -19,6 +19,8 @@ Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411
 
 > 将状态和modify分开，更清晰的modify管理
 
+> 将invoke modify与preview cost，preview damage分开，invoke modify时即时触发效果和消耗次数。
+
 ## Roadmap
 
 > **(目前进度)** 重构中
