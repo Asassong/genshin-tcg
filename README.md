@@ -5,29 +5,17 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
-## 已重构
-
-> 整局游戏用同一个种子生成的随机数序列
-
-> 记录玩家操作
-
-> 将多玩家同时进行的操作改为异步
-
-> 逻辑上部分支持多玩家(具体逻辑待设计）
-
-> modify存放容器重回list
-
-> 将状态和modify分开，更清晰的modify管理
-
-> 将invoke modify与preview cost，preview damage分开，invoke modify时即时触发效果和消耗次数。
+有些卡牌和效果怎么这么烦啊！
 
 ## Roadmap
 
 > **(目前进度)** 重构中
 
+> 修改cost逻辑(我才知道假设一个冰系角色装备了草套，可以减any的cost)
+
 > 天赋卡
 
-> 事件触发器(maybe, 如果没有其他办法的话）
+> 事件触发器或改为事件驱动
 
 > 战斗时限制条件检验
 
