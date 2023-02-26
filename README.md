@@ -5,6 +5,8 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
+在ChatGPT的帮助下，我又对pyqt有信心了。
+
 有些卡牌和效果怎么这么烦啊！
 
 ## Roadmap
@@ -19,7 +21,11 @@ Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411
 
 > 战斗时限制条件检验
 
+> GM端供调试
+
 * v1.0 程序逻辑运行如官服
+
+> 规范客户端布局
 
 > 将服务端改为多进程多线程（现在为单进程多线程）
 
