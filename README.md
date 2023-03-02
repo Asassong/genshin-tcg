@@ -5,9 +5,7 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
-在ChatGPT的帮助下，我又对pyqt有信心了。
-
-有些卡牌和效果怎么这么烦啊！
+这七圣召唤是已经凉透了吗，且不论我的视频，我根本刷不到最近发布的七圣召唤相关视频。
 
 ## Roadmap
 
