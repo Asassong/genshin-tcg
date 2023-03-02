@@ -84,14 +84,25 @@ class Character:
     def get_skills_name(self) -> list:
         skill_names = []
         for key, value in self.skills.items():
-            if "Passive Skill" not in value["type"]:
+            if ("Passive Skill" not in value["type"]) and ("PREPARE" not in value["type"]):
                 skill_names.append(key)
         return skill_names
+
+    def get_skill_name_and_cost(self) -> tuple[list, list]:
+        skill_names = []
+        skill_cost = []
+        for key, value in self.skills.items():
+            if ("Passive Skill" not in value["type"]) and ("PREPARE" not in value["type"]):
+                skill_names.append(key)
+                skill_cost.append(value["cost"])
+        return skill_names, skill_cost
 
     def get_skills_type(self) -> list:
         skill_type = []
         for key, value in self.skills.items():
-            if "Normal Attack" in value["type"]:
+            if "PREPARE" in value["type"]:
+                pass
+            elif "Normal Attack" in value["type"]:
                 skill_type.append("Normal Attack")
             elif "Elemental Skill" in value["type"]:
                 skill_type.append("Elemental Skill")

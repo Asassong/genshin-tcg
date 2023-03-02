@@ -341,7 +341,7 @@
   "time_limit": {"USAGE": 1},
   "icon": "state",
   "count": "time",
-  "store": "SELF"
+  "store": "TEAM"
  },
  "Catalyzing Field": {
   "modify": [{"name": "Catalyzing Field_0",
@@ -353,7 +353,7 @@
   "time_limit": {"USAGE": 2},
   "icon": "state",
   "count": "time",
-  "store": "SELF"
+  "store": "TEAM"
  },
  "Explosive Spark": {
   "modify": [{"name": "Explosive Spark_0",
@@ -399,19 +399,56 @@
   "count": "time",
   "store": "TEAM"
  },
+  "Ceremonial Garmet": {
+    "modify": [{"name": "Ceremonial Garmet_0",
+              "trigger_time": "attack",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"DMG": "+1"},
+              "effect_obj": "SELF"},
+             {"name": "Ceremonial Garmet_1",
+              "trigger_time": "after_attack",
+              "condition": ["NORMAL_ATTACK"],
+              "effect": {"HEAL": 1},
+              "effect_obj": "ALL"}],
+  "time_limit": {"DURATION": 2},
+  "icon": "state",
+  "count": "time",
+  "store": "SELF"
+  },
   "Seed of Skandha": {
-    "modify": [{"trigger_time": "attack", "condition":["ELEMENT_REACTION"], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 2, "ROUND": [1, 1]}}]
+    "modify": [{"name": "Seed of Skandha_0",
+                "trigger_time": "element_reaction",
+                "condition":["ELEMENT_REACTION"],
+                "effect":{"DENDRO_DMG": 1},
+                "effect_obj":"OPPOSE_ALL",
+                "time_limit":{"ROUND": [1, 1]}}],
+    "time_limit": {"DURATION": 2},
+    "icon": "state",
+    "count": "time",
+    "store": "TEAM"
+  },
+  "Fiery Sanctum": {
+    "modify": [{"name": "Fiery Sanctum_0",
+                "trigger_time": "extra_attack",
+                "condition":["SKILL"],
+                "effect":{"PYRO_DMG": 1},
+                "effect_obj":"OPPOSE",
+                "time_limit":{"ROUND": [1, 1]}},
+              {"name": "Fiery Sanctum_1",
+                "trigger_time": "defense",
+                "condition":[],
+                "effect":{"HURT": "-1"},
+                "effect_obj":"OPPOSE",
+                "time_limit":{"ROUND": [1, 1]}}],
+    "time_limit": {"DURATION": 2},
+    "icon": "state",
+    "count": "time",
+    "store": "TEAM"
   },
   "Shrine of Maya": {
     "modify": [{"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_PYRO"], "effect":{"ADD_MODIFY": {"trigger_time": "attack", "condition":[["USE_SKILL", "All Schemes to Know"]], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"PIERCE_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}}}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 2, "ROUND": [1, 1]}},
                {"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_HYDRO"], "effect":{"CHANGE_STATE_MODIFY": {"Seed of Skandha": [{"trigger_time": "attack", "condition":["ELEMENT_REACTION"], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"USAGE": 1}}}, "effect_obj":"ALL", "time_limit":{"DURATION": 3, "ROUND": [1, 1]}}]}}, "effect_obj":"SELF", "time_limit":{"DURATION": 2}},
                {"trigger_time": "use_skill", "condition":["CHECK", "ELEMENT_ALL_ELECTRO"], "effect":{"ADD_MODIFY": {"trigger_time": "attack", "condition":[["USE_SKILL", "All Schemes to Know"]], "effect":{"ADD_MODIFY": {"trigger_time": "extra_attack", "condition":[], "effect":{"DENDRO_DMG": 1}, "effect_obj":"OPPOSE_ALL", "time_limit":{"USAGE": 1}}}, "effect_obj":"OPPOSE_ALL", "time_limit":{"IMMEDIATE": 1}}}, "effect_obj":"SELF", "time_limit":{"IMMEDIATE": 1}}]
-  },
-  "Grass Ring of Sanctification": {
-    "modify": [{"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"ELECTRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}},
-               {"trigger_time": "end", "condition":["STAGE_ROUND_END"], "effect":{"HEAL": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}},
-               {"trigger_time": "start", "condition":["STAGE_ROUND_START"], "effect":{"ELECTRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"USAGE": 1}},
-               {"trigger_time": "start", "condition":["STAGE_ROUND_START"], "effect":{"HEAL": 1}, "effect_obj":"ACTIVE", "time_limit":{"USAGE": 1}}]
   },
   "Pyro Scorpion": {
     "modify": [{"trigger_time": "extra_attack", "condition":[["CHECK", "HP_SELF_<=6"]], "effect":{"PYRO_DMG": 1}, "effect_obj":"OPPOSE", "time_limit":{"INFINITY": 1}}]

@@ -21,7 +21,7 @@ from character import Character
 from summon import Summon, get_summon_usage
 from dice import Dice
 from enums import ElementType
-from utils import update_or_append_dict, ModifyContainer, read_json
+from utils import update_or_append_dict, read_json
 from typing import Optional
 
 
@@ -42,6 +42,7 @@ class Player:
         self.current_character = None
         self.team_modifier = []
         self.team_state = {}
+        self.round_has_end = True
 
 
     def draw(self, num):

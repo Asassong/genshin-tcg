@@ -50,12 +50,13 @@ class Card:
             modifies = self.card_info["modify"]
             team_modify = []
             for modify in modifies:
-                if modify["store"] == "self":
-                    self.modifies += modify
+                if modify["store"] == "SELF":
+                    self.modifies.append(modify)
                 else:
-                    team_modify += modify
+                    team_modify.append(modify)
             if team_modify:
                 return team_modify
+        return []
 
 
 

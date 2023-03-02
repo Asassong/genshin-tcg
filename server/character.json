@@ -226,6 +226,33 @@
         "nation": ["Mondstadt"],
         "energy": 3,
         "hp": 10},
+    "Sangonomiya Kokomi": {
+        "element_type": "HYDRO",
+        "skills": {
+            "Ripple of Fate": {
+                "type": ["Normal Attack"],
+                "cost": {"HYDRO": 1,  "ANY": 2},
+                "damage": {"HYDRO": 1}},
+            "Mirror Reflection of Doom": {
+                "type": ["Elemental Skill"],
+                "cost": {"HYDRO": 3},
+                "summon": {"Bake-Kurage": 1},
+                "modify": [{"name": "Mirror Reflection of Doom_0",
+                            "trigger_time": "after_attack",
+                            "condition":[],
+                            "effect":{"APPLICATION": "HYDRO"},
+                            "effect_obj":"SELF",
+                            "store": "SELF",
+                            "time_limit":{"IMMEDIATE": 1}}]},
+            "Stellaris Phantasm": {
+                "type": ["Elemental Burst"],
+                "cost": {"HYDRO": 3, "ENERGY": 3},
+                "damage": {"HYDRO": 3},
+                "create": {"Ceremonial Garment": 1}}},
+        "weapon": "Catalyst",
+        "nation": ["Inazuma"],
+        "energy": 2,
+        "hp": 10},
     "Diluc": {
         "element_type": "PYRO",
         "skills": {
@@ -830,15 +857,52 @@
                 "type": ["Elemental Skill"],
                 "cost": {"ELECTRO": 3},
                 "damage": {"ELECTRO": 1},
-                "create": {"Grass Ring of Sanctification": 1},
-                "modify": [{"trigger_time": "use_skill", "condition":[], "effect":{"HEAL": -2}, "effect_obj":"SELF", "time_limit":{"IMMEDIATE": 1}}]},
+                "summon": {"Grass Ring of Sanctification": 1},
+                "modify": [{"name": "Sanctifying Ring_0",
+                            "trigger_time": "use_skill",
+                            "condition":[],
+                            "effect":{"HEAL": -2},
+                            "effect_obj":"SELF",
+                            "store": "SELF",
+                            "time_limit":{"IMMEDIATE": 1}}]},
             "Gyoei Narukami Kariyama Rite": {
                 "type": ["Elemental Burst"],
-                "cost": {"DENDRO": 3, "ENERGY":3} ,
+                "cost": {"ELECTRO": 3, "ENERGY":3} ,
                 "damage": {"ELECTRO": 7}}},
         "weapon": "Sword",
         "nation": ["Inazuma"],
         "energy": 3,
+        "hp": 10},
+    "Dehya": {
+        "element_type": "PYRO",
+        "skills": {
+            "Sandstorm Assault": {
+                "type": ["Normal Attack"],
+                "cost": {"PYRO": 1, "ANY": 2},
+                "damage": {"PHYSICAL": 2}},
+            "Molten Inferno": {
+                "type": ["Elemental Skill"],
+                "cost": {"PYRO": 3},
+                "create": {"Fiery Sanctum": 1}},
+            "Flame-Mane's Fists": {
+                "type": ["Elemental Burst", "PREPARE"],
+                "cost": {},
+                "damage": {"PYRO": 2}
+            },
+            "Leonine Bite": {
+                "type": ["Elemental Burst"],
+                "cost": {"PYRO": 3, "ENERGY": 2},
+                "modify": [{"name": "Leonine Bite_0",
+                            "trigger_time": "after_attack",
+                            "condition":[],
+                            "effect":{"PREPARE": {"name":"Flame-Mane's Fists",
+                                                  "time_limit": {"PREPARE": [0, 1]}}},
+                            "effect_obj":"SELF",
+                            "store": "SELF",
+                            "time_limit":{"USAGE": 3}}]}},
+        "weapon": "Claymore",
+        "nation": ["Sumeru"],
+        "energy": 2,
         "hp": 10},
     "Eremite Scorching Loremaster": {
         "element_type": "PYRO",

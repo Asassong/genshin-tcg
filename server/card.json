@@ -975,76 +975,82 @@
     ],
     "counter": ["Element Dice"]},
     "Chang the Ninth": {
-    "cost": {},
-    "tag": ["Companion"],
-    "effect_obj": "player",
-    "modify": [
-        {
-            "trigger_time": "attack",
-            "condition": [
-                ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
-                ["CHECK", "ELEMENT_ATTACK_PHYSICAL"],
-                "EXCLUSIVE"
-            ],
-            "effect": {"Inspiration": "+1"},
-            "effect_obj": "COUNTER",
-            "time_limit": {"INFINITE": 1}
-        },
-        {
-            "trigger_time": "defense",
-            "condition": [
-                ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
-                ["CHECK", "ELEMENT_HURT_PHYSICAL"],
-                "EXCLUSIVE"
-            ],
-            "effect": {"Inspiration": "+1"},
-            "effect_obj": "COUNTER",
-            "time_limit": {"INFINITE": 1}
-        },
-        {
-            "trigger_time": "pierce_hurt",
-            "condition": [
-                ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
-                ["CHECK", "ELEMENT_HURT_PIERCE"],
-                "EXCLUSIVE"
-            ],
-            "effect": {"Inspiration": "+1"},
-            "effect_obj": "COUNTER",
-            "time_limit": {"INFINITE": 1}
-        },
-        {
-            "trigger_time": "pierce",
-            "condition": [
-                ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
-                ["CHECK", "ELEMENT_ATTACK_PIERCE"],
-                "EXCLUSIVE"
-            ],
-            "effect": {"Inspiration": "+1"},
-            "effect_obj": "COUNTER",
-            "time_limit": {"INFINITE": 1}
-        },
-        {
-            "trigger_time": "combat",
-            "condition": [
-                ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
-                "ELEMENT_REACTION",
-                "EXCLUSIVE"
-            ],
-            "effect": {"Inspiration": "+1"},
-            "effect_obj": "COUNTER",
-            "time_limit": {"INFINITE": 1}
-        },
-        {
-            "trigger_time": "any",
-            "condition": [
-                ["CHECK", "COUNTER_Inspiration_>=3"]
-            ],
-            "effect": {"DRAW_CARD": 2},
-            "effect_obj": "PLAYER",
-            "time_limit": {"USAGE": 1}
-        }
-    ],
-    "counter": ["Inspiration"]},
+      "cost": {},
+      "tag": ["Companion"],
+      "effect_obj": "player",
+      "modify": [
+          {
+              "trigger_time": "attack",
+              "condition": [
+                  ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
+                  ["CHECK", "ELEMENT_ATTACK_PHYSICAL"],
+                  "EXCLUSIVE"
+              ],
+              "effect": {"Inspiration": "+1"},
+              "effect_obj": "COUNTER",
+              "store": "SELF",
+              "time_limit": {"INFINITE": 1}
+          },
+          {
+              "trigger_time": "defense",
+              "condition": [
+                  ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
+                  ["CHECK", "ELEMENT_HURT_PHYSICAL"],
+                  "EXCLUSIVE"
+              ],
+              "effect": {"Inspiration": "+1"},
+              "effect_obj": "COUNTER",
+              "store": "SELF",
+              "time_limit": {"INFINITE": 1}
+          },
+          {
+              "trigger_time": "pierce_hurt",
+              "condition": [
+                  ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
+                  ["CHECK", "ELEMENT_HURT_PIERCE"],
+                  "EXCLUSIVE"
+              ],
+              "effect": {"Inspiration": "+1"},
+              "effect_obj": "COUNTER",
+              "store": "SELF",
+              "time_limit": {"INFINITE": 1}
+          },
+          {
+              "trigger_time": "pierce",
+              "condition": [
+                  ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
+                  ["CHECK", "ELEMENT_ATTACK_PIERCE"],
+                  "EXCLUSIVE"
+              ],
+              "effect": {"Inspiration": "+1"},
+              "effect_obj": "COUNTER",
+              "store": "SELF",
+              "time_limit": {"INFINITE": 1}
+          },
+          {
+              "trigger_time": "combat",
+              "condition": [
+                  ["NEED_REMOVE", ["HAVE_MODIFY", "TEAM", "Chang the Ninth_5"]],
+                  "ELEMENT_REACTION",
+                  "EXCLUSIVE"
+              ],
+              "effect": {"Inspiration": "+1"},
+              "effect_obj": "COUNTER",
+            "store": "SELF",
+              "time_limit": {"INFINITE": 1}
+          },
+          {
+              "trigger_time": "any",
+              "condition": [
+                  ["CHECK", "COUNTER_Inspiration_>=3"]
+              ],
+              "effect": {"DRAW_CARD": 2},
+              "effect_obj": "PLAYER",
+              "store": "SELF",
+              "time_limit": {"USAGE": 1}
+          }
+      ],
+      "counter": ["Inspiration"]},
     "Ellin": {
         "cost": {"SAME": 2},
         "tag": ["Companion"],
@@ -1223,7 +1229,7 @@
                     "condition":[],
                     "effect":{"APPEND_DICE": "ELECTRO"},
                     "effect_obj":"PLAYER",
-                    "store": "SELF",
+                    "store": "TEAM",
                     "time_limit":{"IMMEDIATE": 1}}]},
     "Elemental Resonance High Voltage": {
         "cost": {"ELECTRO": 1},
@@ -1442,21 +1448,21 @@
         "modify": [
             {
                 "name": "When the Crane Returned_0",
-                "trigger_time": "attack",
+                "trigger_time": "use_skill",
                 "condition": ["SKILL"],
                 "effect": {
-                    "ADD_MODIFY": {
+                    "ADD_MODIFY": [{
                         "name": "When the Crane Returned_0_0",
                         "trigger_time": "after_attack",
                         "condition": [],
                         "effect": {"CHANGE_CHARACTER": 1},
                         "effect_obj": "ALL",
-                        "store": "SELF",
+                        "store": "TEAM",
                         "time_limit": {"IMMEDIATE": 1}
-                    }
+                    }]
                 },
                 "effect_obj": "ALL",
-                "store": "SELF",
+                "store": "TEAM",
                 "time_limit": {"USAGE": 1}
             }
         ]

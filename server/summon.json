@@ -129,5 +129,29 @@
       }
     },
     "be_added": ["random_type"]
+  },
+  "Bake-Kurage": {
+    "effect":[{"damage": {"HYDRO": 1}, "effect_obj": "OPPOSE"},
+              {"heal": 2, "effect_obj": "ACTIVE"}],
+    "usage": 2
+  },
+  "Grass Ring of Sanctification": {
+    "effect":[{"damage": {"ELECTRO": 1}, "effect_obj": "OPPOSE"},
+              {"heal": 1, "effect_obj": "ACTIVE"}],
+    "modify": [{"name": "Grass Ring of Sanctification_0",
+                "trigger_time": "start",
+                "condition":[],
+                "effect":{"ELECTRO_DMG": 1},
+                "effect_obj":"OPPOSE",
+                "store": "TEAM",
+                "time_limit":{"USAGE": 1}},
+              {"name": "Grass Ring of Sanctification_1",
+                "trigger_time": "start",
+                "condition":[],
+                "effect":{"HEAL": 1},
+                "effect_obj":"ACTIVE",
+                "store": "TEAM",
+                "time_limit":{"USAGE": 1}}],
+    "usage": 1
   }
 }
