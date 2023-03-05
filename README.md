@@ -5,11 +5,15 @@
 
 Demo is released，can see at [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
 
-这七圣召唤是已经凉透了吗，且不论我的视频，我根本刷不到最近发布的七圣召唤相关视频。
+                             [bilibili](https://www.bilibili.com/video/BV1FL411f7xb/)
+                             
+## 客户端(client)
+ 
+* [genshin-tcg-client](https://github.com/Asassong/genshin-tcg-client)
 
 ## Roadmap
 
-**(目前进度)** 客户端改进中（自适应大小✔，打出卡牌和元素调和操作仿官服，角色死亡状态和冻结状态），服务端重构中
+**(目前进度)** 重构中
 
 > 修改cost逻辑(我才知道假设一个冰系角色装备了草套，可以减any的cost)
 
