@@ -31,6 +31,8 @@
 
 > Character,Card, Summon都继承Entity类
 
+> 统一效果文件(modify)格式
+
 > 将服务端改为多进程多线程（现在为单进程多线程）
 
 > 将传输协议改为KCP
