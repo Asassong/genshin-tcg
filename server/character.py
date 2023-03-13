@@ -14,8 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-from enums import ElementType, Nation
-from utils import read_json, ModifyContainer
+from enums import ElementType
+from utils import read_json
 from copy import deepcopy
 
 
@@ -32,8 +32,8 @@ class Character:
         self.name = character_name
         self.skills: dict = character_detail["skills"]
         self.element = ElementType[character_detail["element_type"].upper()]
-        self.nation = [Nation[i] for i in character_detail["nation"] if i]
-        self.weapon = character_detail["weapon"]
+        self.nation = [i.lower() for i in character_detail["nation"] if i]
+        self.weapon = character_detail["weapon"].upper()
         if "counter" in character_detail:
             self.counter = {i: 0 for i in character_detail["counter"]}
         else:
@@ -41,13 +41,11 @@ class Character:
         self.alive = True
         self._energy = 0
         self.modifies = []
-        if "modify" in character_detail:
-            self.modifies += character_detail["modify"]
         self.application: list[ElementType] = []  # 元素附着
         self.equipment = {"weapon": None, "artifact": None, "talent": None}  # 武器, 圣遗物, 天赋
         self._saturation = 0
         self.is_active = False
-        self.state = {} # 护盾，附魔，冻结等
+        self.state = {} # 只有冻结，准备，附魔这些改变游戏机制的效果写进状态
 
     def change_hp(self, value):
         self._hp = min(self._hp + value, self.max_hp)
@@ -64,6 +62,9 @@ class Character:
             return False
         else:
             return True
+
+    def get_hurt(self):
+        return self.max_hp - self._hp
 
     def get_name(self):
         return self.name

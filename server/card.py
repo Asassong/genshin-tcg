@@ -27,17 +27,13 @@ class Card:
         self.card_info = deepcopy(all_usable_card[name])
         self._cost = self.card_info["cost"]
         self.tag = self.card_info["tag"]
-        self.effect_obj = self.card_info["effect_obj"]
-        self.combat_limit = {}
-        if "combat_limit" in self.card_info:
-            self.combat_limit = self.card_info["combat_limit"]
-        self.modifies = []
-        self.use_skill = ""
-        if "use_skill" in self.card_info:
-            self.use_skill = self.card_info["use_skill"]
+        self.combat_limit = self.card_info["combat_limit"] if "combat_limit" in self.card_info else []
+        self.modifies = self.card_info["modify"] if "modify" in self.card_info else []
+        self.use_skill = self.card_info["use_skill"] if "use_skill" in self.card_info else ""
         self.counter = {}
         if "counter" in self.card_info:
             self.counter = {counter: 0 for counter in self.card_info["counter"]}
+        self.usage = self.card_info["usage"] if "usage" in self.card_info else 1
 
     def get_name(self):
         return self._name
@@ -45,19 +41,34 @@ class Card:
     def get_cost(self):
         return self._cost
 
-    def init_modify(self):
-        if "modify" in self.card_info:
-            modifies = self.card_info["modify"]
-            team_modify = []
-            for modify in modifies:
-                if modify["store"] == "SELF":
-                    self.modifies.append(modify)
-                else:
-                    team_modify.append(modify)
-            if team_modify:
-                return team_modify
-        return []
+    def need_fetch(self):
+        if "fetch" in self.card_info:
+            return self.card_info["fetch"]
+        else:
+            return False
 
+    def get_store(self):
+        return self.card_info["store"]
 
+    def have_usage(self):
+        if "usage" in self.card_info:
+            return True
+        return False
+
+    def have_counter(self):
+        if "counter" in self.card_info:
+            return True
+        return False
+
+    def get_count(self):
+        if self.counter:
+            _, num = next(iter(self.counter.items()))
+            return num
+
+    def add_counter(self, counter_name):
+        self.counter.update({counter_name: 0})
+
+    def clear_counter(self):
+        self.counter.clear()
 
 card_dict = read_json("card.json")

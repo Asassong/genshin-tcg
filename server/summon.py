@@ -23,7 +23,7 @@ class Summon:
         self.detail = deepcopy(summon_dict[name])
         self.effect: list[dict] = self.detail["effect"]
         self.usage = self.detail["usage"]
-        self.modifies = []
+        self.modifies = self.detail["modify"]
         self.type = {}
         if "type" in self.detail:
             self.type = self.detail["type"]
@@ -36,31 +36,20 @@ class Summon:
         self.element = None
         if "element" in self.detail:
             self.element = self.detail["element"]
-
+        self.counter = {}
+        if "counter" in self.detail:
+            self.counter = {i: 0 for i in self.detail["counter"]}
 
     def consume_usage(self, value):
-        self.usage -= value
+        if isinstance(value, str):
+            if value == "all":
+                self.usage = 0
+        else:
+            self.usage -= value
         if self.usage <= 0:
             return "remove"
 
     def get_name(self):
         return self._name
-
-    def init_modify(self):
-        if "modify" in self.detail:
-            modifies = self.detail["modify"]
-            team_modify = []
-            for modify in modifies:
-                if modify["store"] == "self":
-                    self.modifies.append(modify)
-                else:
-                    team_modify.append(modify)
-            if team_modify:
-                return team_modify
-
-def get_summon_usage(summon_name):
-    detail = summon_dict[summon_name]
-    usage = detail["usage"]
-    return usage
 
 summon_dict = read_json("summon.json")

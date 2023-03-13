@@ -18,6 +18,7 @@ import json
 from typing import Union, Any, Iterator
 from collections.abc import MutableMapping
 from collections import Counter
+import re
 
 
 def read_json(file: str) -> dict[str]:
@@ -84,6 +85,19 @@ def update_or_append_dict(target_dict: dict, element:dict[Any, Union[int, float]
             target_dict[key] += value
         else:
             target_dict.update({key: value})
+
+def evaluate_expression(expression: str, constant_values: dict): # 将形如"{__element}"的字符串用constant_values中对应值替换
+    special = re.search('\{(__\w+)}', expression)
+    if special:
+        special_key = special.group(1)
+        try:
+            if "{%s}" % special_key == expression: # 如果为{__number}执行if, "{__element}_DMG", "+{__number}"执行else
+                return constant_values[special_key]
+            else:
+                return expression.format(**constant_values)
+        except KeyError as e:
+            print("潜在错误: 未get或fetch的special_const %s" % e)
+    return expression
 
 
 # 添加用update字典或list（tuple），获得、修改和删除都用index

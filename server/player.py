@@ -18,7 +18,7 @@ import random
 
 from card import Card
 from character import Character
-from summon import Summon, get_summon_usage
+from summon import Summon
 from dice import Dice
 from enums import ElementType
 from utils import update_or_append_dict, read_json
@@ -35,6 +35,8 @@ class Player:
         self.max_character_saturation = player_info["max_character_saturation"]
         self.summons: list[Summon] = []
         self.supports: list[Card] = []
+        self.char_pack = char_pack
+        self.card_pack = card_pack
         self.characters: list[Character] = self.init_character(deck[0], char_pack)
         self.dices: list[Dice] = []
         self.cards: list[Card] = self.init_card(deck[1], card_pack)
@@ -138,22 +140,31 @@ class Player:
 
     def get_standby_obj(self):
         if self.current_character is not None:
-            character = self.characters.copy()
-            character.pop(self.current_character)
+            characters = self.characters[self.current_character+1:] + self.characters[:self.current_character]
             standby = []
-            for char in character:
+            for char in characters:
                 if char.alive:
                     standby.append(char)
             return standby
 
     def get_no_self_obj(self, character: Character):
-        characters = self.characters.copy()
-        characters.remove(character)
-        other = []
-        for char in characters:
-            if char.alive:
-                other.append(char)
-        return other
+        if character in self.characters:
+            character_index = self.characters.index(character)
+            characters = self.characters[character_index + 1:] + self.characters[:character_index]
+            other = []
+            for char in characters:
+                if char.alive:
+                    other.append(char)
+            return other
+
+    def get_active_first_obj(self):
+        if self.current_character is not None:
+            characters = self.characters[self.current_character:] + self.characters[:self.current_character]
+            alive_char = []
+            for char in characters:
+                if char.alive:
+                    alive_char.append(char)
+            return alive_char
 
     def roll(self, extra_num = 0, fixed_dice = None):
         if fixed_dice is not None:
@@ -195,7 +206,7 @@ class Player:
             self.remove_dice(index)
 
     def append_hand_card(self, card_name):
-        self.hand_cards.append(Card(card_name))
+        self.hand_cards.append(Card(card_name, self.card_pack))
 
     def remove_hand_card(self, index):
         self.hand_cards.pop(index)
@@ -218,7 +229,8 @@ class Player:
         active_element = active_obj.element.name
         team_element = []
         for character in self.characters:
-            team_element.append(character.element.name)
+            if character.alive:
+                team_element.append(character.element.name)
         team_element = list(set(team_element))
         count_dice = {}
         dice_type = []
@@ -226,8 +238,7 @@ class Player:
             dice_type.append(ElementType(dice.element).name)
         for dice in set(dice_type):
             count_dice[dice] = dice_type.count(dice)
-        if "OMNI" not in count_dice:  # 方便之后的逻辑
-            count_dice["OMNI"] = 0
+        count_dice.setdefault("OMNI", 0) # 方便之后的逻辑
         cost = self.sort_cost(cost)
         real_cost = {}
         for cost_type, cost_num in cost.items():
@@ -237,24 +248,24 @@ class Player:
                 real_cost.update({"ENERGY": cost_num})
             elif cost_type in ElementType.__members__:
                 if cost_type in count_dice:
-                    if cost_num < count_dice[cost_type]:
+                    if cost_num <= count_dice[cost_type]:
                         count_dice[cost_type] -= cost_num
-                        update_or_append_dict(real_cost, {cost_type: cost_num})
-                    elif cost_num == count_dice[cost_type]:
-                        update_or_append_dict(real_cost, {cost_type: cost_num})
-                        del count_dice[cost_type]
+                        real_cost.setdefault(cost_type, 0)
+                        real_cost[cost_type] += cost_num
                     else:
                         if count_dice["OMNI"] + count_dice[cost_type] >= cost_num:
-                            update_or_append_dict(real_cost, {cost_type: count_dice[cost_type]})
+                            real_cost.setdefault(cost_type, 0)
+                            real_cost[cost_type] += count_dice[cost_type]
                             count_dice["OMNI"] -= cost_num - count_dice[cost_type]
-                            update_or_append_dict(real_cost, {"OMNI": cost_num - count_dice[cost_type]})
-                            del count_dice[cost_type]
+                            real_cost.setdefault("OMNI", 0)
+                            real_cost["OMNI"] += cost_num - count_dice[cost_type]
                             continue
                         return False
                 else:
                     if count_dice["OMNI"] >= cost_num:
                         count_dice["OMNI"] -= cost_num
-                        update_or_append_dict(real_cost, {"OMNI": cost_num})
+                        real_cost.setdefault("OMNI", 0)
+                        real_cost["OMNI"] += cost_num
                         continue
                     return False
             elif cost_type == "SAME":
@@ -396,24 +407,22 @@ class Player:
             return False
 
     def add_summon(self, summon_name):
+        if len(self.summons) >= self.max_summon:
+            return "remove"
         now_summon_name = self.get_summon_name()
+        new_summon = Summon(summon_name)
         if summon_name in now_summon_name:
             index = now_summon_name.index(summon_name)
             summon_obj = self.summons[index]
-            # TODO 逻辑还需确认
-            if summon_obj.stack <= 1:
-                self.remove_summon(index)
+            if summon_obj.stack > summon_obj.usage:
+                if summon_obj.usage <= new_summon.usage:
+                    summon_obj.usage = min(summon_obj.usage + new_summon.usage, summon_obj.stack)
+                summon_obj.modifies = new_summon.modifies
             else:
-                if summon_obj.stack <= summon_obj.usage:
-                    return False  # 无意义，只起跳过作用
-                else:
-                    usage = get_summon_usage(summon_name)
-                    summon_obj.usage = min(summon_obj.usage + usage, summon_obj.stack * usage)
-                    return True  # 无意义，只起跳过作用
+                summon_obj.usage = max(summon_obj.usage, new_summon.usage)
         else:
-            if len(self.summons) >= self.max_summon:
-                yield "remove"
-        self.summons.append(Summon(summon_name))
+            self.summons.append(new_summon)
+        return True
 
     def remove_summon(self, summon_index):
         self.summons.pop(summon_index)
@@ -424,6 +433,11 @@ class Player:
             summon_name_list.append(summon.get_name())
         return summon_name_list
 
+    def get_summon_by_name(self, summon_name):
+        for summon in self.summons:
+            if summon_name == summon.get_name():
+                return summon
+
     def trigger_summon(self, summon: Summon, consume_usage):
         summon_state = summon.consume_usage(consume_usage)
         if summon_state == "remove":
@@ -433,12 +447,20 @@ class Player:
         return self.hand_cards[index]
 
     def add_support(self, card: Card):
-        if len(self.supports) >= self.max_support:
-            yield "remove"
-        self.supports.append(card)
+        if self.is_support_reach_limit():
+            return "remove"
+        else:
+            self.supports.append(card)
+            return True
 
     def remove_support(self, support_index):
         self.supports.pop(support_index)
+
+    def is_support_reach_limit(self):
+        if len(self.supports) >= self.max_support:
+            return True
+        else:
+            return False
 
     def get_support_name(self):
         name_list = []
@@ -452,13 +474,16 @@ class Player:
             nation_list.append(character.nation)
         return nation_list
 
-    def get_most_hurt(self):
+    def get_most_hurt_standby(self):
         characters = self.get_standby_obj()
         hp_list = []
         for character in characters:
-            hp_list.append(character.get_hp())
-        min_value = min(hp_list)
-        return characters[characters.index(min_value)]
+            hp_list.append(character.get_hurt())
+        max_value = max(hp_list)
+        if max_value == 0:
+            return False
+        else:
+            return characters[characters.index(max_value)]
 
     def clear_character_saturation(self):
         for character in self.characters:
