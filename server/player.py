@@ -50,29 +50,38 @@ class Player:
     def draw(self, num):
         if len(self.cards) < num:
             num = len(self.cards)
+        draw_num = 0
         for i in range(num):
             draw_index = random.randint(0, len(self.cards)-1)
             if len(self.hand_cards) < self.max_hand_card:
                 self.hand_cards.append(self.cards[draw_index])
+                draw_num += 1
             self.cards.pop(draw_index)
+        return draw_num
 
     def redraw(self, cards):
         drop_cards = sorted(cards, reverse=True)
+        redraw_card = []
         for i in drop_cards:
-            self.cards.append(self.hand_cards[i])
+            redraw_card.append(self.hand_cards[i])
             self.hand_cards.pop(i)
         self.draw(len(drop_cards))
+        for card in redraw_card:
+            self.cards.append(card)
 
     def draw_type(self, card_type):
         valid_card = []
         for index, card in enumerate(self.cards):
             if card_type in card.tag:
                 valid_card.append(index)
+        draw_num = 0
         if valid_card:
             draw_index = random.randint(0, len(valid_card) - 1)
             if len(self.hand_cards) < self.max_hand_card:
+                draw_num += 1
                 self.hand_cards.append(self.cards[valid_card[draw_index]])
             self.cards.pop(valid_card[draw_index])
+        return draw_num
 
     @staticmethod
     def init_card(card_list, card_pack):
@@ -206,7 +215,10 @@ class Player:
             self.remove_dice(index)
 
     def append_hand_card(self, card_name):
-        self.hand_cards.append(Card(card_name, self.card_pack))
+        if len(self.hand_cards) < self.max_hand_card:
+            self.hand_cards.append(Card(card_name, self.card_pack))
+            return True
+        return False
 
     def remove_hand_card(self, index):
         self.hand_cards.pop(index)
@@ -361,12 +373,13 @@ class Player:
                             count_input[cost_type] -= 1
                     elif "OMNI" in count_input:
                         if count_input["OMNI"] + count_input[cost_type] >= cost_num:
-                            for _ in range(count_input[cost_type]):
+                            corresponding_type_num = count_input[cost_type]
+                            for _ in range(corresponding_type_num):
                                 input_element.remove(cost_type)
-                                count_input[cost_type] -= 1
-                            for _ in range(cost_num - count_input[cost_type]):
+                            for _ in range(cost_num - corresponding_type_num):
                                 input_element.remove("OMNI")
-                                count_input["OMNI"] -= 1
+                            count_input["OMNI"] -= cost_num - corresponding_type_num
+                            count_input[cost_type] = 0
                         else:
                             return False
                     else:
