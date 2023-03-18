@@ -99,6 +99,11 @@ def evaluate_expression(expression: str, constant_values: dict): # 将形如"{__
             print("潜在错误: 未get或fetch的special_const %s" % e)
     return expression
 
+def reverse_delete(target_list: list, index_list: Union[set, list]):
+    if index_list:
+        for index in sorted(index_list, reverse=True):
+            target_list.pop(index)
+
 
 # 添加用update字典或list（tuple），获得、修改和删除都用index
 class ModifyContainer:

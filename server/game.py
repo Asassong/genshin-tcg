@@ -21,7 +21,7 @@ from character import Character
 from card import Card
 from summon import Summon
 from enums import ElementType, GameStage
-from utils import read_json, evaluate_expression
+from utils import read_json, evaluate_expression, reverse_delete
 from typing import Union
 import socket
 import threading
@@ -112,30 +112,31 @@ class Game:
                     self.broadcast_condition.append({message: client_index})
                 elif message == "check_cost":
                     self.broadcast_condition.append({message: client_index, "cost": data["cost"]})
-                elif data["message"] == "cancel":
-                    self.broadcast_condition.append({message: client_index})
-                elif data["message"].startswith("chose_target"):
+                elif message == "cancel":
+                    if self.now_player == client_index:
+                        self.broadcast_condition.append({"action": message})
+                elif message.startswith("chose_target"):
                     self.broadcast_condition.append({message: client_index, "index": data["index"]})
-                elif data["message"] == "change_character":
+                elif message == "change_character":
                     change_to = data["character"]
                     if self.now_player == client_index:
-                        self.broadcast_condition.append({"action": data["message"], "change_to": change_to})
-                elif data["message"] == "play_card":
+                        self.broadcast_condition.append({"action": message, "change_to": change_to})
+                elif message == "play_card":
                     if self.now_player == client_index:
                         self.broadcast_condition.append(
-                            {"action": data["message"], "card_index": data["card_index"]})
-                elif data["message"] == "element_tuning":
+                            {"action": message, "card_index": data["card_index"]})
+                elif message == "element_tuning":
                     if self.now_player == client_index:
                         self.broadcast_condition.append(
-                            {"action": data["message"], "card_index": data["card_index"]})
-                elif data["message"] == "round_end":
+                            {"action": message, "card_index": data["card_index"]})
+                elif message == "round_end":
                     if self.now_player == client_index:
                         self.broadcast_condition.append(
-                            {"action": data["message"]})
-                elif data["message"] == "use_skill":
+                            {"action": message})
+                elif message == "use_skill":
                     if self.now_player == client_index:
                         self.broadcast_condition.append(
-                            {"action": data["message"], "skill_index": data["skill_index"]})
+                            {"action": message, "skill_index": data["skill_index"]})
                 print("recv", data)
 
     @staticmethod
@@ -271,8 +272,7 @@ class Game:
 
     async def start_stage(self):
         self.now_player = self.first_player
-        for _ in range(len(self.players)):
-            player = self.players[self.now_player]
+        for player in self.players:
             active = player.get_active_character_obj()
             await self.invoke_modify("start", player, active)
 
@@ -290,7 +290,7 @@ class Game:
                 self.send(card_num_message, client)
 
     async def roll_and_reroll(self, index, player):
-        roll_effect = await self.invoke_modify("roll", player, None)
+        roll_effect = await self.invoke_modify("roll", player, player.get_active_character_obj())
         if "FIXED_DICE" in roll_effect:
             player.roll(fixed_dice=roll_effect["FIXED_DICE"])
             roll_effect.pop("FIXED_DICE")
@@ -365,20 +365,21 @@ class Game:
                     if action_info["action"] == "change_character":
                         change_to = action_info["change_to"]
                         now_player = self.players[self.now_player]
-                        change_state = await self.player_change_avatar(now_player, change_to)
                         change_from = now_player.current_character
+                        change_state = await self.player_change_avatar(now_player, change_to)
                         action_type = "combat"
                         if not change_state:
+                            self.send_effect_message("block_action", now_player, None)
                             continue
                         elif change_state == "fast":
                             action_type = "fast"
-                        now_player.choose_character(change_to)
                         self.send_effect_message("change_active", now_player, None, change_from=change_from,
                                                  change_to=change_to)
                     elif "play_card" == action_info["action"]:
                         play_card_state = await self.play_card(self.players[self.now_player], action_info["card_index"])
                         action_type = "fast"
                         if not play_card_state:
+                            self.send_effect_message("block_action", now_player, None)
                             continue
                         elif play_card_state == "combat":
                             action_type = "combat"
@@ -386,6 +387,7 @@ class Game:
                         element_tuning_state = await self.element_tuning(self.players[self.now_player],
                                                                    action_info["card_index"])
                         if not element_tuning_state:
+                            self.send_effect_message("block_action", now_player, None)
                             continue
                         action_type = "fast"
                     elif "use_skill" == action_info["action"]:
@@ -554,7 +556,7 @@ class Game:
     async def ask_player_choose_target(self, player, target_type):
         target = "choose_target"
         choose_message = {"message": target, "target_type": target_type}
-        return_target = target.replace("choose", "chose")
+        return_target = "chose_target"
         index = self.players.index(player)
         self.send(choose_message, self.client_socket[index])
         while True:
@@ -701,9 +703,9 @@ class Game:
             cost = preview_invoke("change_from", change_from, cost)
             cost = preview_invoke("change_to", change_to, cost)
         elif operation == "use_skill":
-            cost = preview_invoke("skill_cost", invoker, cost)
+            cost = preview_invoke("skill_cost", invoker, cost, **kwargs)
         elif operation == "play_card":
-            cost = preview_invoke("card_cost", invoker, cost)
+            cost = preview_invoke("card_cost", invoker, cost, **kwargs)
         return cost
 
     def modify_satisfy_condition(self, player, invoker, modify, **kwargs):
@@ -715,6 +717,7 @@ class Game:
             elif "USAGE" in time_limit:
                 if time_limit["USAGE"] <= 0:
                     return False
+        print("unlimited_time")
         if self.check_condition(player, invoker, modify["condition"], **kwargs):
             return True
         return False
@@ -768,8 +771,8 @@ class Game:
                                 finally:
                                     if get:
                                         self.lock.release()
-                        elif "cancel" in each:
-                            if each["cancel"] == player_index:
+                        elif "action" in each:
+                            if each["action"] == "cancel":
                                 get = False
                                 try:
                                     get = self.lock.acquire()
@@ -797,7 +800,7 @@ class Game:
             cost_state = await self.action_cost(player, preview_cost)
             if cost_state:
                 change_effect = await self.invoke_modify("change_from", player, active, change_cost=normal_cost, change_action=change_action)
-                # TODO 确认在这还是调用结束后切换角色
+                player.choose_character(new_active)
                 change_effect = await self.invoke_modify("change_to", player, new_active_obj, change_cost=change_effect["change_cost"],
                                                    change_action=change_effect["change_action"])
                 change_action = change_effect["change_action"]
@@ -828,7 +831,6 @@ class Game:
         card_cost = card.get_cost().copy()
         tag = card.tag
         cost = self.preview_cost("play_card", player, player.get_active_character_obj(), card_cost, card_tag=tag)
-        print("cost", cost)
         state = player.check_cost(cost)
         if state or state == {}:
             need_fetch = card.need_fetch()
@@ -841,20 +843,24 @@ class Game:
             if card.combat_limit:
                 satisfy = self.check_condition(player, None, card.combat_limit, special_const=select_const)
                 if not satisfy:
+                    print("不满足战斗限制")
                     return False
             if "Food" in tag:
                 if isinstance(obj, Character):
                     if obj.get_saturation() < player.max_character_saturation:
                         obj.change_saturation("+1")
                     else:
+                        print("饱食度已满")
                         return False
                 else:
                     return False
             elif "Weapon" in tag:
                 if isinstance(obj, Character):
                     if obj.weapon not in tag:
+                        print("武器类型错误")
                         return False
                 else:
+                    print("选择目标非角色")
                     return False
             elif "Location" in tag or "Companion" in tag or "Item" in tag:
                 if player.is_support_reach_limit():
@@ -863,6 +869,7 @@ class Game:
             cost_state = await self.action_cost(player, cost)
             print("cost_state", cost_state)
             if not cost_state:
+                print("费用不足")
                 return False
             await self.invoke_modify("card_cost", player, player.get_active_character_obj(), card_tag=tag, cost=card_cost)
             player.remove_hand_card(card_index)
@@ -898,9 +905,13 @@ class Game:
             await self.invoke_modify("play_card", player, obj, card_tag=tag)
             if card.use_skill:
                 await self.handle_skill(player, player.get_active_character_obj(), card.use_skill, skip_cost=True)
+            if "Combat Action" in tag:
+                return "combat"
+            else:
+                return True
         else:
+            print("费用不足")
             return False
-        return True
 
     async def handle_skill(self, player, invoker, skill_name, skip_cost=False):
         skill_detail = invoker.get_skill_detail(skill_name)
@@ -949,11 +960,10 @@ class Game:
         for element_type, init_damage in damage.items():
             if element_type in ElementType.__members__:
                 reaction_effect = self.handle_element_reaction(player, oppose, oppose_active, element_type)
-                effects = next(reaction_effect)
-                reaction = effects["reaction"]
-                for key, value in effects.items():
+                reaction = reaction_effect["reaction"]
+                for key, value in reaction_effect.items():
                     if key == element_type:
-                        init_damage += eval(effects[key])
+                        init_damage += eval(reaction_effect[key])
                     elif key in ["HYDRO_DMG", "GEO_DMG", "ELECTRO_DMG","DENDRO_DMG", "PYRO_DMG", "PHYSICAL_DMG",
                                 "CRYO_DMG", "ANEMO_DMG", "PIERCE_DMG"]:
                         extra_attack.append({key.replace("_DMG", ""): value})
@@ -967,7 +977,7 @@ class Game:
                     self.send_effect_message("hp", oppose, oppose_active)
                     if oppose_state == "die":
                         await self.handle_oppose_dead(oppose)
-                next(reaction_effect)
+                await self.handle_element_reaction_extra_effect(player, oppose, oppose_active, reaction)
             elif element_type == "PHYSICAL":
                 infusion = None
                 if isinstance(attacker, Character):
@@ -1004,8 +1014,8 @@ class Game:
                     self.send_effect_message("hp", oppose, obj)
                     if oppose_state == "die":
                         await self.handle_oppose_dead(oppose)
-                await self.invoke_modify("pierce", player, attacker)
-                await self.invoke_modify("pierce_hurt", player, None)
+                await self.invoke_modify("pierce", player, attacker, element="PIERCE")
+                await self.invoke_modify("pierce_hurt", player, None, element="PIERCE")
         if extra_attack:
             oppose_other = oppose.get_character().copy()
             oppose_other.remove(oppose_active)
@@ -1055,88 +1065,95 @@ class Game:
                     old_state = invoker.modifies[old_invoker_modifies_name[state_name]][state_name]
                     if old_state["usage"] <= state_info["usage"]:
                         old_state["usage"] = state_info["usage"]
+                        self.send_effect_message("change_state_usage", player, invoker, state_name=state_name,
+                                                 type="self", num=old_state["usage"])
                     old_state["modify"] = state_info["modify"]
                 else:
                     invoker.modifies.append({state_name: state_info})
                     self.send_effect_message("add_state", player, invoker, state_name=state_name, num=num,
-                                             type="self", state_icon="state", store=player.characters.index(invoker))
+                                             type="self", state_icon=state_info["icon"], store=player.characters.index(invoker))
             elif state_info["store"] == "TEAM":
                 if state_name in old_team_modifies_name:
                     old_state = player.team_modifier[old_team_modifies_name[state_name]][state_name]
                     if old_state["usage"] <= state_info["usage"]:
                         old_state["usage"] = state_info["usage"]
+                        self.send_effect_message("change_state_usage", player, invoker, state_name=state_name,
+                                                 type="team", num=old_state["usage"])
                     old_state["modify"] = state_info["modify"]
                 else:
-                    player.team_modifier.update({state_name: state_info})
+                    player.team_modifier.append({state_name: state_info})
                     self.send_effect_message("add_state", player, invoker, state_name=state_name, num=num,
-                                             type="team", state_icon="state", store=player.current_character)
+                                             type="team", state_icon=state_info["icon"], store=player.current_character)
 
     async def handle_summon(self, player: Player, summon_dict: dict):
         for summon_name, num in summon_dict.items():
             for _ in range(num):
-                while True:
-                    add_state = player.add_summon(summon_name)
-                    if add_state == "remove":
-                        index = await self.ask_player_choose_target(player, "summon")
-                        player.remove_summon(index)
-                    else:
-                        break
-                summon_obj = player.summons[-1]
-                self.send_effect_message("add_summon", player, summon_obj)
+                add_state = player.add_summon(summon_name)
+                # while True:
+                #     add_state = player.add_summon(summon_name)
+                #     if add_state == "remove":
+                #         index = await self.ask_player_choose_target(player, "summon")
+                #         player.remove_summon(index)
+                #     else:
+                #         break
+                if add_state == "add":
+                    summon_obj = player.summons[-1]
+                    self.send_effect_message("add_summon", player, summon_obj)
+                elif add_state == "cancel":
+                    pass
+                else:
+                    if isinstance(add_state, int):
+                        summon_obj = player.summons[add_state]
+                        self.send_effect_message("change_summon_usage", player, summon_obj, index=add_state)
 
     def handle_element_reaction(self, player, trigger_on_player, trigger_obj: Character, element):
         trigger_obj.application.append(ElementType[element])
-        print(1187, "element_reaction", trigger_obj.application)
         applied_element = set(trigger_obj.application)
+        return_effect = {}
         # 反应顺序还需进一步测试
         if {ElementType.CRYO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.PYRO)
-            yield {"CRYO": "+2", "PYRO": "+2", "reaction": "MELT"}
+            return_effect = {"CRYO": "+2", "PYRO": "+2", "reaction": "MELT"}
         elif {ElementType.HYDRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.PYRO)
             applied_element.remove(ElementType.HYDRO)
-            yield {"HYDRO": "+2", "PYRO": "+2", "reaction": "VAPORIZE"}
+            return_effect = {"HYDRO": "+2", "PYRO": "+2", "reaction": "VAPORIZE"}
         elif {ElementType.ELECTRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.PYRO)
-            yield {"ELECTRO": "+2", "PYRO": "+2", "reaction": "OVERLOADED"}
-            self.handle_state(trigger_on_player, trigger_obj, {"Overloaded": 1})
+            return_effect = {"ELECTRO": "+2", "PYRO": "+2", "reaction": "OVERLOADED"}
         elif {ElementType.HYDRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.HYDRO)
             applied_element.remove(ElementType.CRYO)
-            yield {"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN"}
-            self.handle_state(trigger_on_player, trigger_obj, {"Frozen": 1})
+            return_effect = {"HYDRO": "+1", "CRYO": "+1", "reaction": "FROZEN"}
         elif {ElementType.ELECTRO, ElementType.CRYO}.issubset(applied_element):
             applied_element.remove(ElementType.CRYO)
             applied_element.remove(ElementType.ELECTRO)
-            yield {"ELECTRO": "+1", "CRYO": "+1", "PIERCE_DMG": 1, "reaction": "SUPER_CONDUCT"}
+            return_effect = {"ELECTRO": "+1", "CRYO": "+1", "PIERCE_DMG": 1, "reaction": "SUPER_CONDUCT"}
         elif {ElementType.ELECTRO, ElementType.HYDRO}.issubset(applied_element):
             applied_element.remove(ElementType.ELECTRO)
             applied_element.remove(ElementType.HYDRO)
-            yield {"ELECTRO": "+1", "HYDRO": "+1", "PIERCE_DMG": 1, "reaction": "ELECTRO_CHARGE"}
+            return_effect = {"ELECTRO": "+1", "HYDRO": "+1", "PIERCE_DMG": 1, "reaction": "ELECTRO_CHARGE"}
         elif {ElementType.DENDRO, ElementType.PYRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.PYRO)
-            yield {"DENDRO": "+1", "PYRO": "+1", "reaction": "BURNING"}
-            self.handle_summon(player, {"Burning Flame": 1})
+            return_effect = {"DENDRO": "+1", "PYRO": "+1", "reaction": "BURNING"}
         elif {ElementType.DENDRO, ElementType.HYDRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.HYDRO)
-            yield {"DENDRO": "+1", "HYDRO": "+1", "reaction": "BLOOM"}
-            self.handle_state(player, player.get_active_character_obj(), {"Dendro Core": 1})
+            return_effect = {"DENDRO": "+1", "HYDRO": "+1", "reaction": "BLOOM"}
         elif {ElementType.DENDRO, ElementType.ELECTRO}.issubset(applied_element):
             applied_element.remove(ElementType.DENDRO)
             applied_element.remove(ElementType.ELECTRO)
-            yield {"DENDRO": "+1", "ELECTRO": "+1", "reaction": "CATALYZE"}
-            self.handle_state(player, player.get_active_character_obj(), {"Catalyzing Field": 1})
+            return_effect = {"DENDRO": "+1", "ELECTRO": "+1", "reaction": "CATALYZE"}
         elif ElementType.ANEMO in applied_element:
             applied_element.remove(ElementType.ANEMO)
             elements = list(applied_element)
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    yield {element.name + "_DMG": 1, "reaction": "SWIRL", "swirl_element": element.name}
+                    return_effect = {element.name + "_DMG": 1, "reaction": "SWIRL", "swirl_element": element.name}
                     break
         elif ElementType.GEO in applied_element:
             applied_element.remove(ElementType.GEO)
@@ -1144,14 +1161,27 @@ class Game:
             for element in elements:
                 if element != ElementType.DENDRO:
                     applied_element.remove(element)
-                    yield {"GEO": "+1", "reaction": "CRYSTALLIZE", "crystallize_element": element.name}
-                    self.handle_state(player, player.get_active_character_obj(), {"Crystallize": 1})
+                    return_effect = {"GEO": "+1", "reaction": "CRYSTALLIZE", "crystallize_element": element.name}
                     break
         else:
-            yield {"reaction": None}
+            return_effect = {"reaction": None}
         trigger_obj.application = list(applied_element)
         self.send_effect_message("application", trigger_on_player, trigger_obj)
-        yield
+        return return_effect
+        
+    async def handle_element_reaction_extra_effect(self, player, trigger_on_player, trigger_obj: Character, reaction):
+        if reaction == "FROZEN":
+            await self.handle_state(trigger_on_player, trigger_obj, {"Frozen": 1})
+        elif reaction == "OVERLOADED":
+            await self.handle_state(trigger_on_player, trigger_obj, {"Overloaded": 1})
+        elif reaction == "BURNING":
+            await self.handle_summon(player, {"Burning Flame": 1})
+        elif reaction == "BLOOM":
+            await self.handle_state(player, player.get_active_character_obj(), {"Dendro Core": 1})
+        elif reaction == "CATALYZE":
+            await self.handle_state(player, player.get_active_character_obj(), {"Catalyzing Field": 1})
+        elif reaction == "CRYSTALLIZE":
+            await self.handle_state(player, player.get_active_character_obj(), {"Crystallize": 1})
 
     def update_player_display_cost(self, player: Player):
         active = player.get_active_character_obj()
@@ -1254,24 +1284,52 @@ class Game:
         else:
             print("未知trigger time %s" % operation)
             return {}
+        print(operation, kwargs)
         if "from_oppose" in kwargs:
+            print("invoke_oppose")
             invoker_oppose = False
         return_effect = {}
         if invoker is not None and invoke_invoker:
-            kwargs = await self.process_modify(operation, player, invoker, invoker, invoker.modifies, return_effect, **kwargs)
+            print("invoker_pre_modify", invoker.modifies)
+            kwargs, _ = await self.process_modify(operation, player, invoker, invoker, invoker.modifies, return_effect, **kwargs)
+            print("invoker_after_modify", invoker.modifies)
         if not only_invoker:
             if invoker is not None and invoke_beside_invoker:
                 for character in player.get_no_self_obj(invoker):
-                    kwargs = await self.process_modify(operation, player, invoker, character, character.modifies,
+                    print("%s_pre_modify" % character.get_name(), character.modifies)
+                    kwargs, _ = await self.process_modify(operation, player, invoker, character, character.modifies,
                                                        return_effect, **kwargs)
-            kwargs = await self.process_modify(operation, player, invoker, None, player.team_modifier,
+                    print("%s_after_modify" % character.get_name(), character.modifies)
+            print("team_pre_modify", player.team_modifier)
+            kwargs, _ = await self.process_modify(operation, player, invoker, None, player.team_modifier,
                                                return_effect, **kwargs)
-            for summon in player.summons:
-                kwargs = await self.process_modify(operation, player, invoker, summon, summon.modifies,
+            print("team_after_modify", player.team_modifier)
+            need_remove_summon = set()
+            for index, summon in enumerate(player.summons):
+                print("%s_pre_modify" % summon.get_name(), summon.modifies)
+                kwargs, need_remove = await self.process_modify(operation, player, invoker, summon, summon.modifies,
                                                    return_effect, **kwargs)
-            for support in player.supports:
-                kwargs = await self.process_modify(operation, player, invoker, support, support.modifies,
+                if need_remove:
+                    need_remove_summon.add(index)
+                print("%s_after_modify" % summon.get_name(), summon.modifies)
+            if need_remove_summon:
+                for index in sorted(need_remove_summon, reverse=True):
+                    player.summons.pop(index)
+                    self.send_effect_message("remove_summon", player, None, index=index)
+            need_remove_support = set()
+            for index, support in enumerate(player.supports):
+                print("%s_pre_modify" % support.get_name(), support.modifies)
+                kwargs, need_remove = await self.process_modify(operation, player, invoker, support, support.modifies,
                                                    return_effect, **kwargs)
+                if need_remove:
+                    need_remove_support.add(index)
+                print("%s_after_modify" % support.get_name(), support.modifies)
+            if need_remove_support:
+                for index in sorted(need_remove_support, reverse=True):
+                    player.supports.pop(index)
+                    self.send_effect_message("remove_support", player, None, index=index)
+            if "from_oppose" in kwargs:
+                kwargs.pop("from_oppose")
             if invoker_oppose:
                 oppose = self.get_one_oppose(player)
                 await self.invoke_modify(operation, oppose, oppose_invoker, from_oppose=True, **kwargs)
@@ -1291,12 +1349,13 @@ class Game:
             return_effect["change_cost"] = kwargs["change_cost"]
         if "change_action" in kwargs:
             return_effect["change_action"] = kwargs["change_action"]
-        print(1459, "invoke_modify", return_effect)
+        print(1338, "invoke_modify", return_effect)
         return return_effect
 
     async def process_modify(self, operation:str, player: Player, from_object: Character,
                              invoker: Union[Summon, Card, Character, None], modifies: list, return_effect, **kwargs):
         need_remove = set()
+        remove_invoker = False
         for index, modify in enumerate(modifies):
             # TODO 后续将统一modify格式
             is_state = False
@@ -1311,6 +1370,7 @@ class Game:
             consume_usage = 0
             need_del_modify = set()
             for modify_index, each_modify in enumerate(contain_modify):
+                print("processing modify", each_modify)
                 if "from" in each_modify:
                     from_limit = each_modify["from"]
                     if from_limit == "SELF":
@@ -1325,11 +1385,18 @@ class Game:
                     elif from_limit == "OPPOSE":
                         if "from_oppose" not in kwargs:
                             continue
+                    elif from_limit == "BOTH":
+                        pass
+                    else:
+                        print("未知from_limit")
+                        continue
+                print("valid source")
                 trigger_time = each_modify["trigger_time"]
                 special_const = {}
                 if "special_const" in state:
                     special_const = state["special_const"]
                 if self.is_trigger_time(operation, trigger_time):
+                    print("is_trigger_time")
                     if "fetch" in each_modify:
                         for need_fetch in each_modify["fetch"]:
                             await self.fetch_from_client(player, need_fetch, special_const)
@@ -1341,24 +1408,28 @@ class Game:
                                 get_success = False
                                 break
                         if not get_success:
+                            print("get_failure")
                             continue
-                    if self.modify_satisfy_condition(player, invoker, each_modify, special_const=special_const, **kwargs):
-                        effect_obj = modify["effect_obj"]
-                        effect = modify["effect"]
+                    kwargs["special_const"] = special_const
+                    if self.modify_satisfy_condition(player, invoker, each_modify, **kwargs):
+                        print("satisfy")
+                        effect_obj = each_modify["effect_obj"]
+                        effect = each_modify["effect"]
                         if isinstance(effect_obj, str):
                             effect_obj = evaluate_expression(effect_obj, special_const)
                         kwargs, consume = await self.handle_effect(player, invoker, effect, effect_obj, return_effect,
-                                                                   special_const=special_const, **kwargs)
+                                                                   **kwargs)
                         if consume:
-                            self.record.write("trigger %s, effect is %s\n" % (modify["name"], str(modify["effect"])))
+                            self.record.write("trigger %s, effect is %s\n" % (each_modify["name"], str(each_modify["effect"])))
                         if "consume" in each_modify:
                             need_consume_times = each_modify["consume"]
                             if consume or "immediate" in each_modify:
-                                if is_state:
+                                if is_state or isinstance(invoker, (Card, Summon)):
                                     if isinstance(need_consume_times, str):
                                         consume_usage = need_consume_times
                                     else:
                                         consume_usage += need_consume_times
+                                    print("change_consume_state", consume_usage)
                                 else:
                                     if "usage" in each_modify:
                                         each_modify["usage"] -= need_consume_times
@@ -1371,7 +1442,7 @@ class Game:
                                                 player.supports.remove(invoker)
                                             else:
                                                 player.summons.remove(invoker)
-                        elif "time_limit" in each_modify:
+                        if "time_limit" in each_modify:
                             consume_status = self.consume_modify_usage(each_modify)
                             if consume_status == "remove":
                                 need_remove.add(index)
@@ -1380,15 +1451,46 @@ class Game:
                             need_del_modify.add(modify_index)
                         else:
                             need_remove.add(index)
+                if "special_const" in kwargs:
+                    kwargs.pop("special_const")
             for need_del_modify_index in sorted(need_del_modify, reverse=True):
                 modify["modify"].pop(need_del_modify_index)
             if consume_usage:
-                if "usage" in modify:
-                    modify["usage"] -= consume_usage
-                    if modify["usage"] <= 0:
+                if "usage" in state:
+                    state["usage"] -= consume_usage
+                    if state["usage"] <= 0:
                         need_remove.add(index)
-        self.remove_modify(modifies, need_remove)
-        return kwargs
+                        if isinstance(invoker, Character):
+                            self.send_effect_message("remove_state", player, invoker, state_name=state_name,
+                                                     type="self")
+                        elif invoker is None:
+                            self.send_effect_message("remove_state", player, invoker, state_name=state_name,
+                                                     type="team")
+                    else:
+                        if isinstance(invoker, Character):
+                            self.send_effect_message("change_state_usage", player, invoker, state_name=state_name,
+                                                     type="self", num=state["usage"])
+                        elif invoker is None:
+                            self.send_effect_message("change_state_usage", player, invoker, state_name=state_name,
+                                                     type="team", num=state["usage"])
+                elif isinstance(invoker, Summon):
+                    consume_state = invoker.consume_usage(consume_usage)
+                    if consume_state == "remove":
+                        remove_invoker = True
+                    else:
+                        summon_index = player.summons.index(invoker)
+                        self.send_effect_message("change_summon_usage", player, invoker, index=summon_index)
+                elif isinstance(invoker, Card):
+                    consume_state = invoker.consume_usage(consume_usage)
+                    if consume_state == "remove":
+                        remove_invoker = True
+                    else:
+                        support_index = player.supports.index(invoker)
+                        self.send_effect_message("change_support_usage", player, invoker, index=support_index)
+                else:
+                    print("找不到consume usage目标", modify)
+        reverse_delete(modifies, need_remove)
+        return kwargs, remove_invoker
 
 
     async def fetch_from_client(self, player, fetch_logic, special_const):
@@ -1510,6 +1612,7 @@ class Game:
         special_const = kwargs["special_const"] if "special_const" in kwargs else {}
         effect_type = effect["effect_type"]
         effect_value = effect["effect_value"]
+        player_index = self.players.index(player)
         if isinstance(effect_type, str):
             effect_type = evaluate_expression(effect_type, special_const)
         if isinstance(effect_value, str):
@@ -1517,10 +1620,18 @@ class Game:
         if effect_obj == "COUNTER":
             if isinstance(invoker, (Character, Card, Summon)):
                 if effect_type in invoker.counter:
+                    from_counter_value = invoker.counter[effect_type]
+                    invoker_name = invoker.get_name()
                     if isinstance(effect_value, str):
                         invoker.counter[effect_type] += eval(effect_value)
                     else:
                         invoker.counter[effect_type] = effect_value
+                    to_counter_value = invoker.counter[effect_type]
+                    self.record.write("player%d's %s counter %s change from %s to %s" % (player_index, invoker_name,
+                                                                                         effect_type, from_counter_value
+                                                                                         , to_counter_value))
+                    if isinstance(invoker, Card):
+                        self.send_effect_message("change_support_usage", player, invoker)
                     consume |= True
                 else:
                     print("潜在错误：unknown counter name %s" % effect_type)
@@ -1722,25 +1833,31 @@ class Game:
             elif effect_type == "CHANGE_CHARACTER":
                 if effect_obj == "OPPOSE":
                     oppose  = self.get_one_oppose(player)
+                    change_from_index = oppose.current_character
                     change_from = oppose.get_active_character_obj()
-                    oppose.auto_change_active(effect_value)
-                    change_to = oppose.get_active_character_obj()
-                    if change_from != change_to:
+                    change_to_index = oppose.auto_change_active(effect_value)
+                    if change_from_index != change_to_index:
                         await self.invoke_modify("change_from", oppose, change_from)
+                        oppose.choose_character(change_to_index)
+                        change_to = oppose.get_active_character_obj()
                         await self.invoke_modify("change_to", oppose, change_to)
                         self.send_effect_message("change_active", oppose, None,
                                                  change_from=oppose.characters.index(change_from),
                                                  change_to=oppose.characters.index(change_to))
+                        await self.invoke_modify("after_change", oppose, None)
                 elif effect_obj == "ALL":
+                    change_from_index = player.current_character
                     change_from = player.get_active_character_obj()
-                    player.auto_change_active(effect_value)
-                    change_to = player.get_active_character_obj()
-                    if change_from != change_to:
+                    change_to_index = player.auto_change_active(effect_value)
+                    if change_from_index != change_to_index:
                         await self.invoke_modify("change_from", player, change_from)
+                        player.choose_character(change_to_index)
+                        change_to = player.get_active_character_obj()
                         await self.invoke_modify("change_to", player, change_to)
                         self.send_effect_message("change_active", player, None,
                                                  change_from=player.characters.index(change_from),
                                                  change_to=player.characters.index(change_to))
+                        await self.invoke_modify("after_change", player, None)
                 else:
                     print("潜在错误：未知change character对象 %s" % effect_obj)
                 consume |= True
@@ -1771,21 +1888,19 @@ class Game:
                 oppose: Player = self.get_one_oppose(player)
                 if effect_obj == "ACTIVE":
                     reaction_effect = self.handle_element_reaction(oppose, player, player.get_active_character_obj(), effect_value)
-                    effects = next(reaction_effect)
-                    # reaction = effects["reaction"]
-                    next(reaction_effect)
+                    reaction = reaction_effect["reaction"]
+                    await self.handle_element_reaction_extra_effect(oppose, player, player.get_active_character_obj(), reaction)
                     # if reaction is not None:
                     #     await self.invoke_modify("element_reaction", player, player.get_active_character_obj())
-                    self.send_effect_message("application", player, player.get_active_character_obj())
+                    # self.send_effect_message("application", player, player.get_active_character_obj())
                 elif effect_obj == "SELF":
                     reaction_effect = self.handle_element_reaction(oppose, player, invoker, effect_value)
-                    effects = next(reaction_effect)
-                    # reaction = effects["reaction"]
-                    next(reaction_effect)
+                    reaction = reaction_effect["reaction"]
+                    await self.handle_element_reaction_extra_effect(oppose, player, invoker, reaction)
                     # if reaction is not None:
                     #     await self.invoke_modify("element_reaction", player, invoker,
                     #                              only_invoker=True)
-                    self.send_effect_message("application", player, invoker)
+                    # self.send_effect_message("application", player, invoker)
                 consume |= True
             elif effect_type == "CHANGE_ENERGY":
                 if effect_obj == "ACTIVE":
@@ -1913,7 +2028,7 @@ class Game:
                                  "num": kwargs["num"], "type": kwargs["type"], "state_icon": kwargs["state_icon"]}
             for client in self.get_oppose_client(player_index):
                 self.send(add_state_message, client)
-        elif change_type == "change_state_usage":
+        elif change_type == "change_state_usage": # kwargs: state_name, num, type
             if kwargs["type"] == "team":
                 store = None
             else:
@@ -1925,7 +2040,7 @@ class Game:
                                   "store":store, "num": kwargs["num"], "type": kwargs["type"]}
             for client in self.get_oppose_client(player_index):
                 self.send(change_state_usage, client)
-        elif change_type == "remove_state":
+        elif change_type == "remove_state": # kwargs: state_name, type
             if kwargs["type"] == "team":
                 store = None
             else:
@@ -1994,7 +2109,7 @@ class Game:
                 self.send(init_support_message, client)
         elif change_type == "add_summon": # invoker[Summon]
             name = invoker.get_name()
-            effect = invoker.effect
+            effect = invoker.get_show()
             usage = invoker.usage
             add_summon_message = {"message": "add_summon", "summon_name": name, "usage": str(usage), "effect":effect}
             self.send(add_summon_message, self.client_socket[player_index])
@@ -2011,12 +2126,34 @@ class Game:
             change_summon_usage_message = {"message": "change_oppose_summon_usage", "index": kwargs["index"], "usage": invoker.usage}
             for client in self.get_oppose_client(player_index):
                 self.send(change_summon_usage_message, client)
-        elif change_type == "remove_summon":
+        elif change_type == "remove_summon": # kwargs: index
             remove_summon_message = {"message": "remove_summon", "index": kwargs["index"]}
             self.send(remove_summon_message, self.client_socket[player_index])
             remove_summon_message = {"message": "remove_oppose_summon", "index": kwargs["index"]}
             for client in self.get_oppose_client(player_index):
                 self.send(remove_summon_message, client)
+        elif change_type == "change_support_usage":
+            index = player.supports.index(invoker)
+            if invoker.have_counter():
+                num = invoker.get_count()
+            elif invoker.have_usage():
+                num = invoker.usage
+            else:
+                num = ""
+            change_support_usage_message = {"message": "change_support_usage", "index": index, "usage": num}
+            self.send(change_support_usage_message, self.client_socket[player_index])
+            change_support_usage_message = {"message": "change_oppose_support_usage", "index": index, "usage": num}
+            for client in self.get_oppose_client(player_index):
+                self.send(change_support_usage_message, client)
+        elif change_type == "remove_support": # kwargs: index
+            remove_support_message = {"message": "remove_support", "index": kwargs["index"]}
+            self.send(remove_support_message, self.client_socket[player_index])
+            remove_support_message = {"message": "remove_oppose_support", "index": kwargs["index"]}
+            for client in self.get_oppose_client(player_index):
+                self.send(remove_support_message, client)
+        elif change_type == 'block_action':
+            block_action_message = {"message": "block_action"}
+            self.send(block_action_message, self.client_socket[player_index])
         # elif change_type == "init_skill":
         #     skill_name, skill_cost = invoker.get_skill_name_and_cost()
         #     init_skill_message = {"message": "init_skill", "skill_name": skill_name, "skill_cost": skill_cost}
@@ -2185,7 +2322,7 @@ class Game:
                         return False
                 elif isinstance(each, dict):
                     logic = each["logic"]
-                    special_const = kwargs["special_const"]
+                    special_const = kwargs["special_const"] if "special_const" in kwargs else {}
                     if logic == "check":
                         check_type = each["what"]
                         if check_type == "counter":
@@ -2323,7 +2460,7 @@ class Game:
                                     continue
                         return False
                     elif logic == "play_card":
-                        if "tag" in each:
+                        if "tag" in each and "card_tag" in kwargs:
                             if each["tag"] in kwargs["card_tag"]:
                                 continue
                         return False
@@ -2395,7 +2532,7 @@ class Game:
                 return True
         elif operator == "is": # 属于某个类别
             if right_value == "melee":
-                if left_value in ["POLEARM", "SWORD", "CLAYMORE"]:
+                if left_value in ["polearm", "sword", "claymore"]:
                     return True
             elif right_value == "even":
                 if not left_value % 2:

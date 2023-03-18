@@ -105,6 +105,8 @@ class Player:
 
     def choose_character(self, character):
         if self.check_character_alive(character):
+            if self.current_character is not None:
+                self.characters[self.current_character].is_active = False
             self.current_character = character
             self.characters[self.current_character].is_active = True
             return True
@@ -127,23 +129,23 @@ class Player:
         else:
             return None
 
-    def change_active_character(self, new_character_index):
-        if self.current_character == new_character_index:
-            return False
-        else:
-            old_index = self.current_character
-            if self.choose_character(new_character_index):
-                self.characters[old_index].is_active = False
-                return True
-            else:
-                return False
+    # def change_active_character(self, new_character_index):
+    #     if self.current_character == new_character_index:
+    #         return False
+    #     else:
+    #         old_index = self.current_character
+    #         if self.choose_character(new_character_index):
+    #             self.characters[old_index].is_active = False
+    #             return True
+    #         else:
+    #             return False
 
     def auto_change_active(self, change_direction):
         suppose_index = self.current_character + change_direction
         while True:
-            state = self.choose_character(suppose_index % len(self.characters))
+            state = self.check_character_alive(suppose_index % len(self.characters))
             if state:
-                break
+                return suppose_index
             else:
                 suppose_index += change_direction
 
@@ -421,7 +423,7 @@ class Player:
 
     def add_summon(self, summon_name):
         if len(self.summons) >= self.max_summon:
-            return "remove"
+            return "cancel"
         now_summon_name = self.get_summon_name()
         new_summon = Summon(summon_name)
         if summon_name in now_summon_name:
@@ -433,9 +435,10 @@ class Player:
                 summon_obj.modifies = new_summon.modifies
             else:
                 summon_obj.usage = max(summon_obj.usage, new_summon.usage)
+            return index
         else:
             self.summons.append(new_summon)
-        return True
+        return "add"
 
     def remove_summon(self, summon_index):
         self.summons.pop(summon_index)
