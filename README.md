@@ -15,7 +15,9 @@
 
 ## Roadmap
 
-**(目前进度)** 补全所有的effect和condition，完善trigger_time
+**(目前进度)** 基本完成modify的逻辑
+
+> 补全所有的effect和condition，完善trigger_time
 
 > 天赋卡
 
@@ -24,6 +26,8 @@
 > Character,Card, Summon都继承Entity类
 
 > 统一效果文件(modify)格式
+
+> 去除冗余代码
 
 > 将服务端改为多进程多线程（现在为单进程多线程）
 
