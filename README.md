@@ -3,6 +3,8 @@
 
 即将完成/Close to completion
 
+我也懒得拯救这个凉透的东西了，又没人看，又没人帮忙，又没人合作。有想法的时候拍拍视频顺便修bug算了。
+
 ## 演示（presentation）
 
 [bilibili](https://www.bilibili.com/video/BV1xA411z78T/), [youtube](https://youtu.be/gqJ6eA0M9xs)
