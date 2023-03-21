@@ -19,15 +19,15 @@
 
 **(目前进度)** 基本完成modify的逻辑
 
-> 补全所有的effect和condition，完善trigger_time
+> Character,Card, Summon, State都继承Entity类
+
+> 统一效果文件(modify)格式
+
+> 补全所有的effect和condition，完善trigger_time(我只添加有需要的，期待PR）
 
 > 天赋卡
 
 * v1.0 程序逻辑运行如官服
-
-> Character,Card, Summon都继承Entity类
-
-> 统一效果文件(modify)格式
 
 > 去除冗余代码
 
