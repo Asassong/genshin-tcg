@@ -17,11 +17,7 @@
 
 ## Roadmap
 
-**(目前进度)** 基本完成modify的逻辑
-
-> Character,Card, Summon, State都继承Entity类
-
-> 统一效果文件(modify)格式
+**(目前进度)** v0.97 移除effect中eval的使用，统一modify，骰子自动排序，抽牌逻辑更改
 
 > 补全所有的effect和condition，完善trigger_time(我只添加有需要的，期待PR）
 
