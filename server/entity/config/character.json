@@ -1,0 +1,158 @@
+{
+  "standard": {
+    "Ganyu": {
+        "element": "CRYO",
+        "skills": {
+            "Liutian Archery": {
+                "tag": ["Normal Attack"],
+                "cost": {"CRYO": 1, "ANY": 2},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"PHYSICAL": 2}},
+            "Trail of the Qilin": {
+                "tag": ["Elemental Skill"],
+                "cost": {"CRYO": 3},
+                "damage": {"CRYO": 1},
+                "add_energy": 1,
+                "show": true,
+                "create": {"Ice Lotus": 1}},
+            "Frostflake Arrow": {
+                "tag": ["Normal Attack"],
+                "cost": {"CRYO": 5},
+                "damage": {"PIERCE": 2, "CRYO": 2},
+                "add_energy": 1,
+                "show": true,
+                "create": {"Frostflake Arrow_0": 1}},
+            "Celestial Shower": {
+                "tag": ["Elemental Burst"],
+                "cost": {"CRYO": 3, "ENERGY": 2},
+                "damage": {"PIERCE": 1, "CRYO": 1},
+                "show": true,
+                "summon": {"Sacred Cryo Pearl": 1}}},
+        "counter_name": "Frostflake Arrow",
+        "weapon": "bow",
+        "nation": ["liyue"],
+        "energy": 2,
+        "hp": 10},
+    "Rhodeia of Loch": {
+        "element": "HYDRO",
+        "skills": {
+            "Surge": {
+                "tag": ["Normal Attack"],
+                "cost": {"HYDRO": 1,  "ANY": 2},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"HYDRO": 1}},
+            "Oceanid Mimic Summoning": {
+                "tag": ["Elemental Skill"],
+                "cost": {"HYDRO": 3},
+                "add_energy": 1,
+                "show": true,
+                "summon": {"Oceanid Mimic": 1}},
+            "The Myriad Wilds": {
+                "tag": ["Elemental Skill"],
+                "cost": {"HYDRO": 5},
+                "add_energy": 1,
+                "show": true,
+                "summon": {"Oceanid Mimic": 2}},
+            "Tide and Torrent": {
+                "tag": ["Elemental Burst"],
+                "cost": {"HYDRO": 3, "ENERGY": 3},
+                "damage": {"HYDRO": 2},
+                "show": true,
+                "before_create": {"Tide and Torrent_0": 1}}},
+        "weapon": "Other Weapons",
+        "nation": ["monster"],
+        "energy": 3,
+        "hp": 10},
+    "Mirror Maiden": {
+        "element": "HYDRO",
+        "skills": {
+            "Water Ball": {
+                "tag": ["Normal Attack"],
+                "cost": {"HYDRO": 1, "ANY": 2},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"HYDRO": 1}},
+            "Influx Blast": {
+                "tag": ["Elemental Skill"],
+                "cost": {"HYDRO": 3},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"HYDRO": 3},
+                "create": {"Influx Blast": 1}},
+            "Rippled Reflection": {
+                "tag": ["Elemental Burst"],
+                "cost": {"HYDRO": 3, "ENERGY":2},
+                "show": true,
+                "damage": {"HYDRO": 5}}},
+        "weapon": "Other Weapons",
+        "nation": ["fatui"],
+        "energy": 2,
+        "hp": 10},
+    "Fischl": {
+        "element": "ELECTRO",
+        "skills": {
+            "Bolts of Downfall": {
+                "tag": ["Normal Attack"],
+                "cost": {"ELECTRO": 1, "ANY": 2},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"PHYSICAL": 2}},
+            "Nightrider": {
+                "tag": ["Elemental Skill"],
+                "cost": {"ELECTRO": 3},
+                "damage": {"ELECTRO": 1},
+                "add_energy": 1,
+                "show": true,
+                "summon": {"Oz": 1}},
+            "Midnight Phantasmagoria": {
+                "tag": ["Elemental Burst"],
+                "cost": {"ELECTRO": 3, "ENERGY": 3},
+                "show": true,
+                "damage": {"PIERCE": 2, "ELECTRO": 4}}},
+        "weapon": "bow",
+        "nation": ["mondstadt"],
+        "energy": 3,
+        "hp": 10}
+    },
+  "plus": {
+    "Ganyu_6": {
+        "element": "CRYO",
+        "skills": {
+            "Liutian Archery": {
+                "tag": ["Normal Attack"],
+                "cost": {"CRYO": 1, "ANY": 2},
+                "add_energy": 1,
+                "show": true,
+                "damage": {"PHYSICAL": 2}},
+            "Trail of the Qilin": {
+                "tag": ["Elemental Skill"],
+                "cost": {"CRYO": 3},
+                "damage": {"CRYO": 1},
+                "add_energy": 1,
+                "show": true,
+                "create": {"Ice Lotus": 1}},
+            "Frostflake Arrow": {
+                "tag": ["Normal Attack"],
+                "cost": {"CRYO": 5},
+                "damage": {"PIERCE": 2, "CRYO": 2},
+                "add_energy": 1,
+                "show": true},
+            "Celestial Shower": {
+                "tag": ["Elemental Burst"],
+                "cost": {"CRYO": 3, "ENERGY": 2},
+                "damage": {"PIERCE": 1, "CRYO": 1},
+                "show": true,
+                "summon": {"Sacred Cryo Pearl": 1}},
+            "Frostflake Arrow_PREPARE": {
+                "tag": ["PREPARE"],
+                "cost": {},
+                "damage": {"PIERCE": 2, "CRYO": 2},
+                "show": false}},
+        "weapon": "bow",
+        "nation": ["liyue"],
+        "energy": 2,
+        "hp": 20}
+  }
+}

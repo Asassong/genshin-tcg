@@ -16,17 +16,17 @@
 
 import random
 
-from card import Card
-from character import Character
-from summon import Summon
-from dice import Dice
-from enums import ElementType
-from utils import update_or_append_dict, read_json
+from server.entity.card import Card
+from server.entity.character import Character
+from server.entity.summon import Summon
+from server.dice import Dice
+from server.enums import ElementType
+from server.utils import update_or_append_dict
 from typing import Optional
 
 
 class Player:
-    def __init__(self, player_info, card_pack, char_pack, deck):
+    def __init__(self, player_info, deck):
         self.max_summon = player_info["max_summon"]
         self.max_support = player_info["max_support"]
         self.max_hand_card = player_info["max_hand_card"]
@@ -35,69 +35,68 @@ class Player:
         self.max_character_saturation = player_info["max_character_saturation"]
         self.summons: list[Summon] = []
         self.supports: list[Card] = []
-        self.char_pack = char_pack
-        self.card_pack = card_pack
-        self.characters: list[Character] = self.init_character(deck[0], char_pack)
+        self.characters: list[Character] = self.init_character(deck[0])
         self.dices: list[Dice] = []
-        self.cards: list[Card] = self.init_card(deck[1], card_pack)
+        self.cards: list[Card] = self.init_card(deck[1])
         self.hand_cards: list[Card] = []
         self.current_character = None
         self.team_modifier = []
         self.team_state = {}
         self.round_has_end = True
 
-
     def draw(self, num):
         if len(self.cards) < num:
             num = len(self.cards)
-        draw_num = 0
-        for i in range(num):
-            draw_index = random.randint(0, len(self.cards)-1)
-            if len(self.hand_cards) < self.max_hand_card:
-                self.hand_cards.append(self.cards[draw_index])
-                draw_num += 1
-            self.cards.pop(draw_index)
-        return draw_num
+        hand_card_num = len(self.hand_cards)
+        self.hand_cards += self.cards[:num]
+        self.hand_cards = self.hand_cards[:self.max_hand_card]
+        self.cards = self.cards[num:]
+        return len(self.hand_cards) - hand_card_num
 
     def redraw(self, cards):
-        drop_cards = sorted(cards, reverse=True)
-        redraw_card = []
-        for i in drop_cards:
-            redraw_card.append(self.hand_cards[i])
-            self.hand_cards.pop(i)
-        self.draw(len(drop_cards))
-        for card in redraw_card:
-            self.cards.append(card)
+        if len(cards) > 0:
+            drop_cards = sorted(cards, reverse=True)
+            redraw_card = []
+            for i in drop_cards:
+                redraw_card.append(self.hand_cards[i])
+                self.hand_cards.pop(i)
+            redraw_num = len(drop_cards)
+            self.draw(redraw_num)
+            random_insert_index = sorted(random.sample(range(len(self.cards) + redraw_num), redraw_num))
+            random.shuffle(redraw_card)
+            for index, card in zip(random_insert_index, redraw_card):
+                if index < len(self.cards):
+                    self.cards.insert(index, card)
+                else:
+                    self.cards.append(card)
 
     def draw_type(self, card_type):
-        valid_card = []
+        draw_num = 0
         for index, card in enumerate(self.cards):
             if card_type in card.tag:
-                valid_card.append(index)
-        draw_num = 0
-        if valid_card:
-            draw_index = random.randint(0, len(valid_card) - 1)
-            if len(self.hand_cards) < self.max_hand_card:
-                draw_num += 1
-                self.hand_cards.append(self.cards[valid_card[draw_index]])
-            self.cards.pop(valid_card[draw_index])
+                if len(self.hand_cards) < self.max_hand_card:
+                    self.hand_cards.append(card)
+                    draw_num = 1
+                self.cards.pop(index)
+                break
         return draw_num
 
     @staticmethod
-    def init_card(card_list, card_pack):
+    def init_card(card_list):
         cards = []
         for card in card_list:
-            cards.append(Card(card, card_pack))
+            cards.append(Card(card))
+        random.shuffle(cards)
         return cards
 
     def get_hand(self):
         return self.hand_cards
 
     @staticmethod
-    def init_character(character_list, char_pack):
+    def init_character(character_list):
         char_list = []
         for index, character_name in enumerate(character_list):
-            char_list.append(Character(character_name, char_pack))
+            char_list.append(Character(character_name))
         return char_list
 
     def get_character(self):
@@ -128,17 +127,6 @@ class Player:
             return self.characters[self.current_character].name
         else:
             return None
-
-    # def change_active_character(self, new_character_index):
-    #     if self.current_character == new_character_index:
-    #         return False
-    #     else:
-    #         old_index = self.current_character
-    #         if self.choose_character(new_character_index):
-    #             self.characters[old_index].is_active = False
-    #             return True
-    #         else:
-    #             return False
 
     def auto_change_active(self, change_direction):
         suppose_index = self.current_character + change_direction
@@ -179,34 +167,41 @@ class Player:
 
     def roll(self, extra_num = 0, fixed_dice = None):
         if fixed_dice is not None:
-            fixed_num = len(fixed_dice)
-            for dice in fixed_dice:
+            fixed_num = min(len(fixed_dice), self.dice_num + extra_num)
+            for dice in fixed_dice[:fixed_num]:
                 self.append_special_dice(dice)
         else:
             fixed_num = 0
         for i in range(self.dice_num + extra_num - fixed_num):
             self.append_random_dice()
+        self.sort_dices()
 
     def get_dice(self):
         return self.dices
 
     def append_random_dice(self):
-        self.dices.append(Dice())
-        self.dices[-1].roll()
+        if len(self.dices) < self.max_dice:
+            self.dices.append(Dice())
+            self.dices[-1].roll()
+            self.sort_dices()
 
     def append_base_dice(self):
-        self.dices.append(Dice())
-        self.dices[-1].roll_base()
+        if len(self.dices) < self.max_dice:
+            self.dices.append(Dice())
+            self.dices[-1].roll_base()
+            self.sort_dices()
 
     def append_special_dice(self, element):
-        self.dices.append(Dice())
-        if isinstance(element, str):
-            index = ElementType[element].value
-        elif isinstance(element, ElementType):
-            index = element.value
-        else:
-            return None
-        self.dices[-1].set_element_type(index)
+        if len(self.dices) < self.max_dice:
+            self.dices.append(Dice())
+            self.dices[-1].set_element_type(element)
+            self.sort_dices()
+
+    def append_different_base_dice(self, num):
+        all_base_dice = ['CRYO', 'HYDRO', 'PYRO', 'ELECTRO', 'GEO', 'DENDRO', 'ANEMO']
+        select = random.sample(all_base_dice, num)
+        for dice in select:
+            self.append_special_dice(dice)
 
     def remove_dice(self, index):
         self.dices.pop(index)
@@ -218,7 +213,7 @@ class Player:
 
     def append_hand_card(self, card_name):
         if len(self.hand_cards) < self.max_hand_card:
-            self.hand_cards.append(Card(card_name, self.card_pack))
+            self.hand_cards.append(Card(card_name))
             return True
         return False
 
@@ -231,6 +226,29 @@ class Player:
             self.remove_dice(index)
         for i in range(len(indexes)):
             self.append_random_dice()
+        self.sort_dices()
+
+    def sort_dices(self):
+        _, team_element = self.get_characters_element()
+        all_dice_type = ['OMNI', 'CRYO', 'HYDRO', 'PYRO', 'ELECTRO', 'GEO', 'DENDRO', 'ANEMO']
+        def sort_method(dice: Dice):
+            if dice.element == "OMNI":
+                return -1
+            elif dice.element in team_element:
+                return team_element.index(dice.element)
+            else:
+                return 10 + all_dice_type.index(dice.element)
+        self.dices = sorted(self.dices, key=sort_method)
+
+    def get_characters_element(self):
+        active_obj = self.get_active_character_obj()
+        active_element = active_obj.element
+        team_element = []
+        for character in self.characters:
+            if character.alive:
+                team_element.append(character.element)
+        team_element = list(set(team_element))
+        return active_element, team_element
 
     @staticmethod
     def sort_cost(cost):
@@ -240,16 +258,11 @@ class Player:
     def check_cost(self, cost):
         active_obj = self.get_active_character_obj()
         active_energy = active_obj.get_energy()
-        active_element = active_obj.element.name
-        team_element = []
-        for character in self.characters:
-            if character.alive:
-                team_element.append(character.element.name)
-        team_element = list(set(team_element))
+        active_element, team_element = self.get_characters_element()
         count_dice = {}
         dice_type = []
         for dice in self.dices:
-            dice_type.append(ElementType(dice.element).name)
+            dice_type.append(dice.element)
         for dice in set(dice_type):
             count_dice[dice] = dice_type.count(dice)
         count_dice.setdefault("OMNI", 0) # 方便之后的逻辑
@@ -361,7 +374,7 @@ class Player:
         return real_cost
 
     def recheck_cost(self, cost, input_index):
-        input_element = [ElementType(self.dices[i].element).name for i in input_index]
+        input_element = [self.dices[i].element for i in input_index]
         count_input = {}
         for dice in set(input_element):
             count_input[dice] = input_element.count(dice)
@@ -425,16 +438,16 @@ class Player:
         if len(self.summons) >= self.max_summon:
             return "cancel"
         now_summon_name = self.get_summon_name()
-        new_summon = Summon(summon_name)
+        new_summon = Summon(summon_name, now_summon_name)
         if summon_name in now_summon_name:
             index = now_summon_name.index(summon_name)
             summon_obj = self.summons[index]
-            if summon_obj.stack > summon_obj.usage:
-                if summon_obj.usage <= new_summon.usage:
-                    summon_obj.usage = min(summon_obj.usage + new_summon.usage, summon_obj.stack)
+            if summon_obj.stack > summon_obj.get_usage():
+                if summon_obj.get_usage() <= new_summon.get_usage():
+                    summon_obj.set_usage(min(summon_obj.get_usage() + new_summon.get_usage(), summon_obj.stack))
                 summon_obj.modifies = new_summon.modifies
             else:
-                summon_obj.usage = max(summon_obj.usage, new_summon.usage)
+                summon_obj.set_usage(max(summon_obj.get_usage(), new_summon.get_usage()))
             return index
         else:
             self.summons.append(new_summon)
@@ -504,5 +517,3 @@ class Player:
     def clear_character_saturation(self):
         for character in self.characters:
             character.cleat_saturation()
-
-player_config = read_json("config.json")["Player"]

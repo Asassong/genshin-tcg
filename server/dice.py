@@ -19,13 +19,15 @@ import random
 
 class Dice:
     def __init__(self):
-        self.element = 0
+        self.element = None
 
-    def set_element_type(self, type_):
-        self.element = type_
+    def set_element_type(self, value):
+        self.element = value
 
     def roll(self):
-        self.element = random.randint(0, 7)
+        self.element = random.choice(all_dice_type)
 
     def roll_base(self):
-        self.element = random.randint(1, 7)
+        self.element = random.choice(all_dice_type[1:])
+
+all_dice_type = ['OMNI', 'CRYO', 'HYDRO', 'PYRO', 'ELECTRO', 'GEO', 'DENDRO', 'ANEMO']
